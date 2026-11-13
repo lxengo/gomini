@@ -1,0 +1,2258 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>gomini</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --sidebar: #f0f4f9;
+        --hover: #e9eef6;
+        --active: #d3e3fd;
+        --text: #1f1f1f;
+        --sub: #444746;
+        --faint: #767978;
+        --border: #dde3ea;
+        --composer-bg: #ffffff;
+        --user-bubble: #f0f4f9;
+        --card: #f0f4f9;
+        --card-hover: #e9eef6;
+        --send-bg: #1f1f1f;
+        --send-fg: #ffffff;
+        --accent: #0b57d0;
+        --shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+        --modal-bg: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131314;
+          --sidebar: #1e1f20;
+          --hover: #282a2c;
+          --active: #333537;
+          --text: #e3e3e3;
+          --sub: #c4c7c5;
+          --faint: #9aa0a6;
+          --border: #444746;
+          --composer-bg: #1e1f20;
+          --user-bubble: #282a2c;
+          --card: #1e1f20;
+          --card-hover: #282a2c;
+          --send-bg: #e3e3e3;
+          --send-fg: #131314;
+          --accent: #a8c7fa;
+          --shadow: 0 1px 6px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+          --modal-bg: #1e1f20;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: "Google Sans", "Noto Sans JP", "Roboto", "Hiragino Kaku Gothic ProN", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+      }
+      button {
+        font-family: inherit;
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 0;
+      }
+      button, [role="button"] { min-height: 2rem; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+
+      /* ---------- layout ---------- */
+      #app { display: flex; height: 100dvh; }
+      main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+
+      /* ---------- sidebar ---------- */
+      #sidebar {
+        width: 280px;
+        flex-shrink: 0;
+        background: var(--sidebar);
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        transition: margin-left 0.25s ease, transform 0.25s ease;
+        z-index: 40;
+      }
+      #sidebar .side-top { display: flex; align-items: center; margin-bottom: 28px; }
+      .icon-btn {
+        width: 40px; height: 40px; min-height: 40px;
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--sub);
+        flex-shrink: 0;
+      }
+      .icon-btn:hover { background: var(--hover); }
+      .icon-btn svg { width: 22px; height: 22px; }
+      #new-chat-btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: var(--bg);
+        color: var(--sub);
+        border-radius: 999px;
+        padding: 10px 18px 10px 14px;
+        font-size: 14px; font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        align-self: flex-start;
+        min-height: 44px;
+      }
+      #new-chat-btn:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+      #new-chat-btn svg { width: 20px; height: 20px; }
+      .side-label {
+        font-size: 13px; font-weight: 500; color: var(--text);
+        padding: 18px 12px 6px;
+      }
+      #recent-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+      .recent-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px; border-radius: 999px;
+        font-size: 14px; color: var(--text);
+        text-align: left; width: 100%;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        min-height: 38px;
+      }
+      .recent-item:hover { background: var(--hover); }
+      .recent-item.current { background: var(--active); font-weight: 500; }
+      .recent-item svg { width: 18px; height: 18px; color: var(--sub); flex-shrink: 0; }
+      .recent-empty { font-size: 13px; color: var(--faint); padding: 4px 12px; }
+      .side-bottom { border-top: 1px solid transparent; padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+      .side-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 8px 12px; border-radius: 999px;
+        font-size: 14px; color: var(--text); text-align: left; width: 100%;
+        min-height: 40px;
+      }
+      .side-row:hover { background: var(--hover); }
+      .side-row svg { width: 20px; height: 20px; color: var(--sub); }
+      /* collapsed (desktop) */
+      #sidebar.collapsed { width: 76px; align-items: center; }
+      #sidebar.collapsed .side-label, #sidebar.collapsed #recent-list,
+      #sidebar.collapsed .side-row span, #sidebar.collapsed #new-chat-btn span { display: none; }
+      #sidebar.collapsed #new-chat-btn { padding: 10px; border-radius: 50%; }
+      #sidebar.collapsed .side-row { justify-content: center; padding: 8px; }
+      #scrim { display: none; }
+
+      /* ---------- header ---------- */
+      header {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        padding: 10px 16px 4px;
+        gap: 8px;
+      }
+      .header-left { display: flex; align-items: flex-start; gap: 4px; }
+      #mobile-menu-btn { display: none; margin-top: 2px; }
+      #model-btn { text-align: left; padding: 4px 8px; border-radius: 10px; position: relative; }
+      #model-btn:hover { background: var(--hover); }
+      #model-btn .brand { font-size: 20px; line-height: 1.25; display: flex; align-items: center; gap: 2px; }
+      #model-btn .brand svg { width: 18px; height: 18px; color: var(--sub); }
+      #model-btn .model-name { font-size: 13px; color: var(--sub); line-height: 1.2; }
+      .header-right { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+      #advanced-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        border: 1px solid var(--border); border-radius: 999px;
+        padding: 8px 16px; font-size: 14px; font-weight: 500;
+        min-height: 38px; white-space: nowrap;
+      }
+      #advanced-btn:hover { background: var(--hover); }
+      #advanced-btn svg { width: 18px; height: 18px; }
+      #avatar {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: #9aa0a6;
+        color: #f1f3f4;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; overflow: hidden;
+      }
+      #avatar svg { width: 26px; height: 26px; display: block; }
+      @media (prefers-color-scheme: dark) {
+        #avatar { background: #5f6368; color: #dadce0; }
+      }
+      /* model popover */
+      #model-menu {
+        position: absolute; top: 74px; left: 16px; z-index: 60;
+        background: var(--modal-bg); border-radius: 14px; box-shadow: var(--shadow);
+        padding: 8px; width: 280px; display: none;
+      }
+      #model-menu.open { display: block; }
+      .model-opt {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        padding: 10px 12px; border-radius: 10px; text-align: left; min-height: 48px;
+      }
+      .model-opt:hover { background: var(--hover); }
+      .model-opt .opt-main { flex: 1; }
+      .model-opt .opt-name { font-size: 14px; font-weight: 500; }
+      .model-opt .opt-desc { font-size: 12px; color: var(--sub); margin-top: 2px; }
+      .model-opt svg { width: 20px; height: 20px; color: var(--accent); visibility: hidden; }
+      .model-opt.selected svg { visibility: visible; }
+
+      /* ---------- scroll area ---------- */
+      #scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+      .col { max-width: 800px; margin: 0 auto; padding: 0 20px; width: 100%; }
+
+      /* home */
+      #home { padding-top: 7vh; }
+      #greeting {
+        font-size: clamp(34px, 6vw, 54px);
+        font-weight: 500; line-height: 1.2; letter-spacing: -0.01em;
+        margin: 0 0 8px;
+        background: linear-gradient(74deg, #4285f4 0%, #9b72cb 38%, #d96570 72%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; color: transparent;
+        width: fit-content;
+      }
+      #greeting-sub { font-size: clamp(24px, 4vw, 40px); font-weight: 500; color: #c4c7c5; margin: 0 0 44px; line-height: 1.25; }
+      @media (prefers-color-scheme: dark) { #greeting-sub { color: #444746; } }
+      #cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding-bottom: 24px; }
+      .card {
+        background: var(--card); border-radius: 16px; padding: 16px;
+        text-align: left; min-height: 132px;
+        display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+        font-size: 14.5px; line-height: 1.5; color: var(--text);
+      }
+      .card:hover { background: var(--card-hover); }
+      .card .card-icon {
+        align-self: flex-end; width: 34px; height: 34px; border-radius: 50%;
+        background: var(--bg); display: flex; align-items: center; justify-content: center;
+      }
+      .card .card-icon svg { width: 19px; height: 19px; color: var(--sub); }
+
+      /* thread */
+      #thread { padding: 12px 0 24px; display: none; }
+      .msg-user { display: flex; justify-content: flex-end; margin: 22px 0 6px; }
+      .msg-user .bubble {
+        background: var(--user-bubble); border-radius: 22px;
+        padding: 11px 18px; max-width: 85%;
+        font-size: 15.5px; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+      }
+      .msg-user .bubble img { max-width: 240px; max-height: 240px; border-radius: 12px; display: block; margin-bottom: 6px; }
+      .msg-ai { display: flex; gap: 14px; margin: 14px 0 4px; }
+      .msg-ai .spark-wrap { flex-shrink: 0; width: 26px; padding-top: 2px; }
+      .msg-ai .spark-wrap svg { width: 24px; height: 24px; display: block; }
+      .msg-ai .ai-body { flex: 1; min-width: 0; }
+      .msg-ai .ai-text { font-size: 15.5px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+      .ai-actions { display: flex; gap: 2px; margin-top: 6px; opacity: 0; transition: opacity 0.15s; }
+      .msg-ai:hover .ai-actions, .msg-ai:last-child .ai-actions { opacity: 1; }
+      @media (hover: none) { .ai-actions { opacity: 1; } }
+      .ai-actions .icon-btn { width: 34px; height: 34px; min-height: 34px; }
+      .ai-actions .icon-btn svg { width: 18px; height: 18px; }
+      .ai-actions .icon-btn.on { color: var(--accent); }
+      .ai-actions .icon-btn.on svg { fill: currentColor; }
+      .thinking svg { animation: sparkPulse 1s ease-in-out infinite; }
+      @keyframes sparkPulse {
+        0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.65; }
+        50% { transform: scale(1.18) rotate(20deg); opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .thinking svg { animation: none; }
+        #scroll { scroll-behavior: auto; }
+      }
+
+      /* ---------- composer ---------- */
+      #composer-wrap { padding: 4px 20px 10px; }
+      #composer-inner { max-width: 800px; margin: 0 auto; }
+      #attach-preview { display: none; padding: 0 6px 8px; }
+      #attach-preview.show { display: block; }
+      #attach-preview .thumb { position: relative; display: inline-block; }
+      #attach-preview img { width: 64px; height: 64px; object-fit: cover; border-radius: 12px; display: block; }
+      #attach-remove {
+        position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; min-height: 24px;
+        border-radius: 50%; background: var(--send-bg); color: var(--send-fg);
+        display: flex; align-items: center; justify-content: center;
+      }
+      #attach-remove svg { width: 14px; height: 14px; }
+      #composer {
+        background: var(--composer-bg);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        padding: 8px 8px 8px 10px;
+      }
+      #composer textarea {
+        width: 100%; border: none; resize: none; background: transparent;
+        font-family: inherit; font-size: 16px; line-height: 1.55; color: var(--text);
+        padding: 8px 10px 2px; max-height: 180px; display: block;
+      }
+      #composer textarea:focus { outline: none; }
+      #composer textarea::placeholder { color: var(--faint); }
+      .composer-row { display: flex; align-items: center; justify-content: space-between; }
+      .composer-left, .composer-right { display: flex; align-items: center; gap: 2px; }
+      #send-btn {
+        width: 40px; height: 40px; min-height: 40px; border-radius: 50%;
+        background: var(--send-bg); color: var(--send-fg);
+        display: none; align-items: center; justify-content: center;
+      }
+      #send-btn.show { display: inline-flex; }
+      #send-btn svg { width: 20px; height: 20px; }
+      #attach-menu {
+        position: absolute; bottom: 118px; z-index: 60;
+        background: var(--modal-bg); border-radius: 14px; box-shadow: var(--shadow);
+        padding: 6px; width: 230px; display: none;
+      }
+      #attach-menu.open { display: block; }
+      .attach-opt {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        padding: 10px 12px; border-radius: 10px; font-size: 14px; text-align: left; min-height: 44px;
+      }
+      .attach-opt:hover { background: var(--hover); }
+      .attach-opt svg { width: 20px; height: 20px; color: var(--sub); }
+      #disclaimer {
+        text-align: center; font-size: 12px; color: var(--sub);
+        margin: 10px 0 2px; line-height: 1.5;
+      }
+
+      /* ---------- modal / toast ---------- */
+      #modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+        display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+      }
+      #modal-overlay.open { display: flex; }
+      #modal {
+        background: var(--modal-bg); border-radius: 24px; max-width: 480px; width: 100%;
+        max-height: 80dvh; overflow-y: auto; padding: 24px;
+        box-shadow: var(--shadow);
+      }
+      #modal h2 { font-size: 19px; margin: 0 0 14px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
+      #modal .modal-body { font-size: 14.5px; line-height: 1.8; color: var(--text); }
+      #modal .modal-body p { margin: 0 0 10px; }
+      .learned-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px;
+      }
+      .learned-item .li-main { flex: 1; min-width: 0; }
+      .learned-item .li-label { font-size: 12.5px; color: var(--sub); }
+      .learned-item .li-value { font-size: 14.5px; font-weight: 500; word-break: break-word; }
+      .forget-btn {
+        color: var(--accent); font-size: 13px; font-weight: 500;
+        padding: 6px 10px; border-radius: 999px; white-space: nowrap; min-height: 36px;
+      }
+      .forget-btn:hover { background: var(--hover); }
+      .modal-action-btn {
+        display: block; width: 100%; text-align: left;
+        padding: 12px 14px; border-radius: 12px; font-size: 14.5px; min-height: 48px;
+        border: 1px solid var(--border); margin-bottom: 8px; background: transparent; color: var(--text);
+      }
+      .modal-action-btn:hover { background: var(--hover); }
+      .modal-action-btn.danger { color: #d93025; }
+      @media (prefers-color-scheme: dark) { .modal-action-btn.danger { color: #f28b82; } }
+      .empty-note { color: var(--faint); font-size: 14px; }
+      #toast {
+        position: fixed; left: 50%; bottom: 108px; transform: translateX(-50%) translateY(20px);
+        background: #1f1f1f; color: #e3e3e3; font-size: 13.5px;
+        padding: 10px 18px; border-radius: 999px; opacity: 0; pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s; z-index: 200; max-width: 86vw; text-align: center;
+      }
+      @media (prefers-color-scheme: dark) { #toast { background: #e3e3e3; color: #131314; } }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      /* ---------- responsive ---------- */
+      @media (max-width: 1023px) {
+        #sidebar {
+          position: fixed; top: 0; left: 0; bottom: 0;
+          display: none;
+          box-shadow: var(--shadow);
+        }
+        #sidebar.open { display: flex; }
+        #sidebar.collapsed { width: 280px; align-items: stretch; }
+        #sidebar.collapsed .side-label, #sidebar.collapsed #recent-list,
+        #sidebar.collapsed .side-row span, #sidebar.collapsed #new-chat-btn span { display: initial; }
+        #sidebar.collapsed #recent-list { display: flex; }
+        #sidebar.collapsed #new-chat-btn { padding: 10px 18px 10px 14px; border-radius: 999px; }
+        #sidebar.collapsed .side-row { justify-content: flex-start; padding: 8px 12px; }
+        #mobile-menu-btn { display: inline-flex; }
+        #scrim.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 30; }
+        #cards { grid-template-columns: repeat(2, 1fr); }
+        #advanced-btn .adv-label { display: none; }
+        #advanced-btn { padding: 8px 10px; }
+        #home { padding-top: 4vh; }
+        .col { padding: 0 16px; }
+        #composer-wrap { padding: 4px 12px 8px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- inverted-color Gemini spark gradient (RGB inverse of the Gemini gradient) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="invGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#bd7a0b" />
+          <stop offset="45%" stop-color="#648d34" />
+          <stop offset="100%" stop-color="#269a8f" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div id="app">
+      <aside id="sidebar" aria-label="サイドバー">
+        <div class="side-top">
+          <button class="icon-btn" id="side-menu-btn" aria-label="メニューを開閉">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+        <button id="new-chat-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span>新しいチャット</span>
+        </button>
+        <div class="side-label">最近</div>
+        <div id="recent-list"><div class="recent-empty">まだチャットがありません</div></div>
+        <div class="side-bottom">
+          <button class="side-row" id="help-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            <span>ヘルプ</span>
+          </button>
+          <button class="side-row" id="activity-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            <span>アクティビティ</span>
+          </button>
+          <button class="side-row" id="settings-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>設定</span>
+          </button>
+        </div>
+      </aside>
+      <div id="scrim"></div>
+
+      <main>
+        <header>
+          <div class="header-left">
+            <button class="icon-btn" id="mobile-menu-btn" aria-label="メニューを開く">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <button id="model-btn" aria-haspopup="true" aria-label="モデルを選択">
+              <span class="brand">gomini
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+              <span class="model-name" id="model-name">2.5 Flash</span>
+            </button>
+          </div>
+          <div class="header-right">
+            <button id="advanced-btn">
+              <svg viewBox="0 0 24 24" fill="url(#invGrad)" aria-hidden="true"><path d="M12 1.8c.7 5.6 3.5 9.1 10.4 10.2C15.5 13.1 12.7 16.6 12 22.2c-.7-5.6-3.5-9.1-10.4-10.2C8.5 10.9 11.3 7.4 12 1.8Z"/></svg>
+              <span class="adv-label">gomini Advanced を試す</span>
+            </button>
+            <div id="avatar" title="アカウント" aria-label="アカウント"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+          </div>
+          <div id="model-menu" role="menu">
+            <button class="model-opt selected" data-model="2.5 Flash">
+              <span class="opt-main"><span class="opt-name">2.5 Flash</span><div class="opt-desc">日常のタスクに最適なモデル</div></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+            <button class="model-opt" data-model="2.5 Pro">
+              <span class="opt-main"><span class="opt-name">2.5 Pro</span><div class="opt-desc">複雑なタスクに対応するモデル</div></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <section id="scroll">
+          <div class="col">
+            <div id="home">
+              <h1 id="greeting">こんにちは</h1>
+              <p id="greeting-sub">何から始めましょうか？</p>
+              <div id="cards">
+                <button class="card" data-q="日本の首都はどこ？">
+                  <span>日本の首都はどこ？</span>
+                  <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+                </button>
+                <button class="card" data-q="富士山の高さは？">
+                  <span>富士山の高さは？</span>
+                  <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></span>
+                </button>
+                <button class="card" data-q="面白い雑学を教えて">
+                  <span>面白い雑学を教えて</span>
+                  <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+                </button>
+                <button class="card" data-q="薔薇って何て読む？">
+                  <span>薔薇って何て読む？</span>
+                  <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></span>
+                </button>
+              </div>
+            </div>
+            <div id="thread" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <div id="composer-wrap">
+          <div id="composer-inner" style="position:relative">
+            <div id="attach-menu">
+              <button class="attach-opt" id="attach-photo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+                画像をアップロード
+              </button>
+            </div>
+            <form id="composer">
+              <div id="attach-preview">
+                <span class="thumb">
+                  <img id="attach-img" alt="添付画像" />
+                  <button type="button" id="attach-remove" aria-label="添付を削除">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </span>
+              </div>
+              <textarea id="input" rows="1" placeholder="gomini に聞く" aria-label="メッセージを入力"></textarea>
+              <div class="composer-row">
+                <div class="composer-left">
+                  <button type="button" class="icon-btn" id="plus-btn" aria-label="添付">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+                <div class="composer-right">
+                  <button type="button" class="icon-btn" id="mic-btn" aria-label="音声入力">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+                  </button>
+                  <button type="submit" id="send-btn" aria-label="送信">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                  </button>
+                </div>
+              </div>
+            </form>
+            <input type="file" id="file-input" accept="image/*" hidden />
+            <p id="disclaimer">gomini は不正確な情報を表示することがあります。回答を再確認してください。</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div id="modal-overlay">
+      <div id="modal" role="dialog" aria-modal="true">
+        <h2><span id="modal-title"></span>
+          <button class="icon-btn" id="modal-close" aria-label="閉じる">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </h2>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+    <div id="toast" role="status"></div>
+
+    <script>
+      "use strict";
+      /* ================= knowledge base ================= */
+      var READINGS = {
+        "台東区":"たいとうく","千代田区":"ちよだく","中央区":"ちゅうおうく","港区":"みなとく",
+        "新宿区":"しんじゅくく","文京区":"ぶんきょうく","墨田区":"すみだく","江東区":"こうとうく",
+        "品川区":"しながわく","目黒区":"めぐろく","大田区":"おおたく","世田谷区":"せたがやく",
+        "渋谷区":"しぶやく","中野区":"なかのく","杉並区":"すぎなみく","豊島区":"としまく",
+        "北区":"きたく","荒川区":"あらかわく","板橋区":"いたばしく","練馬区":"ねりまく",
+        "足立区":"あだちく","葛飾区":"かつしかく","江戸川区":"えどがわく",
+        "日本橋":"にほんばし","小樽":"おたる","旭川":"あさひかわ","札幌":"さっぽろ","函館":"はこだて",
+        "釧路":"くしろ","帯広":"おびひろ","難波":"なんば","梅田":"うめだ","博多":"はかた","那覇":"なは",
+        "明日香":"あすか","斑鳩":"いかるが","橿原":"かしはら","出雲":"いずも","松江":"まつえ",
+        "鳥取":"とっとり","境港":"さかいみなと","下関":"しものせき","門司":"もじ","別府":"べっぷ",
+        "日光":"にっこう","鎌倉":"かまくら","箱根":"はこね","軽井沢":"かるいざわ","草津":"くさつ",
+        "伊勢":"いせ","高山":"たかやま","金沢":"かなざわ","富山":"とやま","新潟":"にいがた",
+        "仙台":"せんだい","盛岡":"もりおか","青森":"あおもり","弘前":"ひろさき","秋田":"あきた",
+        "山形":"やまがた","水戸":"みと","宇都宮":"うつのみや","前橋":"まえばし","高崎":"たかさき",
+        "秩父":"ちちぶ","川越":"かわごえ","千葉":"ちば","横浜":"よこはま","横須賀":"よこすか",
+        "静岡":"しずおか","浜松":"はままつ","名古屋":"なごや","岐阜":"ぎふ","奈良":"なら",
+        "和歌山":"わかやま","神戸":"こうべ","姫路":"ひめじ","岡山":"おかやま","倉敷":"くらしき",
+        "広島":"ひろしま","徳島":"とくしま","高松":"たかまつ","松山":"まつやま","今治":"いまばり",
+        "福岡":"ふくおか","北九州":"きたきゅうしゅう","佐賀":"さが","長崎":"ながさき","佐世保":"させぼ",
+        "熊本":"くまもと","大分":"おおいた","宮崎":"みやざき","鹿児島":"かごしま","石垣":"いしがき",
+        "岩手":"いわて","宮城":"みやぎ","福島":"ふくしま","茨城":"いばらき","栃木":"とちぎ",
+        "群馬":"ぐんま","埼玉":"さいたま","東京":"とうきょう","神奈川":"かながわ","石川":"いしかわ",
+        "福井":"ふくい","山梨":"やまなし","長野":"ながの","愛知":"あいち","三重":"みえ",
+        "滋賀":"しが","京都":"きょうと","大阪":"おおさか","兵庫":"ひょうご","島根":"しまね",
+        "山口":"やまぐち","香川":"かがわ","愛媛":"えひめ","高知":"こうち","沖縄":"おきなわ",
+        "北海道":"ほっかいどう","甲府":"こうふ","大津":"おおつ","津":"つ",
+        "北見":"きたみ","岩見沢":"いわみざわ","網走":"あばしり","留萌":"るもい","苫小牧":"とまこまい",
+        "稚内":"わっかない","江別":"えべつ","紋別":"もんべつ","根室":"ねむろ","千歳":"ちとせ",
+        "富良野":"ふらの","登別":"のぼりべつ","恵庭":"えにわ","伊達":"だて","北広島":"きたひろしま",
+        "石狩":"いしかり","北斗":"ほくと","倶知安":"くっちゃん","余市":"よいち",
+        "桐生":"きりゅう","伊勢崎":"いせさき","太田":"おおた","沼田":"ぬまた","館林":"たてばやし",
+        "渋川":"しぶかわ","藤岡":"ふじおか","富岡":"とみおか","安中":"あんなか",
+        "熊谷":"くまがや","川口":"かわぐち","行田":"ぎょうだ","飯能":"はんのう","加須":"かぞ",
+        "本庄":"ほんじょう","東松山":"ひがしまつやま","春日部":"かすかべ","狭山":"さやま","羽生":"はにゅう",
+        "鴻巣":"こうのす","深谷":"ふかや","上尾":"あげお","草加":"そうか","越谷":"こしがや",
+        "蕨":"わらび","戸田":"とだ","入間":"いるま","朝霞":"あさか","志木":"しき",
+        "和光":"わこう","新座":"にいざ","桶川":"おけがわ","久喜":"くき","北本":"きたもと",
+        "八潮":"やしお","富士見":"ふじみ","三郷":"みさと","蓮田":"はすだ","坂戸":"さかど",
+        "幸手":"さって","鶴ヶ島":"つるがしま","日高":"ひだか","吉川":"よしかわ","ふじみ野":"ふじみの",
+        "白岡":"しらおか","所沢":"ところざわ",
+        "市川":"いちかわ","船橋":"ふなばし","館山":"たてやま","木更津":"きさらづ","松戸":"まつど",
+        "野田":"のだ","茂原":"もばら","成田":"なりた","佐倉":"さくら","東金":"とうがね",
+        "旭":"あさひ","習志野":"ならしの","柏":"かしわ","勝浦":"かつうら","市原":"いちはら",
+        "流山":"ながれやま","八千代":"やちよ","我孫子":"あびこ","鴨川":"かもがわ","鎌ケ谷":"かまがや",
+        "君津":"きみつ","富津":"ふっつ","浦安":"うらやす","四街道":"よつかいどう","袖ケ浦":"そでがうら",
+        "八街":"やちまた","印西":"いんざい","白井":"しろい","富里":"とみさと","南房総":"みなみぼうそう",
+        "匝瑳":"そうさ","香取":"かとり","山武":"さんむ","いすみ":"いすみ","大網白里":"おおあみしらさと",
+        "八王子":"はちおうじ","町田":"まちだ","府中":"ふちゅう","調布":"ちょうふ","小金井":"こがねい",
+        "国分寺":"こくぶんじ","狛江":"こまえ","東大和":"ひがしやまと","清瀬":"きよせ","武蔵野":"むさしの",
+        "三鷹":"みたか","青梅":"おうめ","昭島":"あきしま","東村山":"ひがしむらやま","福生":"ふっさ",
+        "羽村":"はむら","あきる野":"あきるの","瑞穂":"みずほ","奥多摩":"おくたま","立川":"たちかわ",
+        "川崎":"かわさき","相模原":"さがみはら","逗子":"ずし","茅ヶ崎":"ちがさき","秦野":"はだの",
+        "厚木":"あつぎ","大和":"やまと","伊勢原":"いせはら","海老名":"えびな","座間":"ざま",
+        "綾瀬":"あやせ","藤沢":"ふじさわ","小田原":"おだわら","三浦":"みうら","南足柄":"みなみあしがら",
+        "葉山":"はやま","大磯":"おおいそ","二宮":"にのみや","湯河原":"ゆがわら",
+        "足利":"あしかが","佐野":"さの","鹿沼":"かぬま","小山":"おやま","真岡":"もおか",
+        "大田原":"おおたわら","矢板":"やいた","那須塩原":"なすしおばら","下野":"しもつけ","壬生":"みぶ",
+        "上三川":"かみのかわ","高根沢":"たかねざわ","那須":"なす","鬼怒川":"きぬがわ",
+        "さいたま":"さいたま","堺":"さかい","由布":"ゆふ","日田":"ひた","中津":"なかつ",
+        "唐津":"からつ","伊万里":"いまり","武雄":"たけお","鳥栖":"とす","柳川":"やながわ",
+        "八女":"やめ","直方":"のおがた","飯塚":"いいづか","田川":"たがわ","宗像":"むなかた",
+        "太宰府":"だざいふ","糸島":"いとしま","行橋":"ゆくはし"
+      };
+      var CAPITALS = {
+        "日本":"東京","アメリカ":"ワシントンD.C.","フランス":"パリ","イギリス":"ロンドン",
+        "ドイツ":"ベルリン","イタリア":"ローマ","スペイン":"マドリード","中国":"北京","韓国":"ソウル",
+        "ロシア":"モスクワ","カナダ":"オタワ","オーストラリア":"キャンベラ","ブラジル":"ブラジリア",
+        "インド":"ニューデリー","タイ":"バンコク","ベトナム":"ハノイ","インドネシア":"ジャカルタ",
+        "フィリピン":"マニラ","エジプト":"カイロ","トルコ":"アンカラ","ギリシャ":"アテネ",
+        "スイス":"ベルン","オランダ":"アムステルダム","スウェーデン":"ストックホルム","ノルウェー":"オスロ",
+        "デンマーク":"コペンハーゲン","フィンランド":"ヘルシンキ","ポーランド":"ワルシャワ","チェコ":"プラハ",
+        "オーストリア":"ウィーン","ハンガリー":"ブダペスト","ポルトガル":"リスボン","アイルランド":"ダブリン",
+        "ニュージーランド":"ウェリントン","メキシコ":"メキシコシティ","アルゼンチン":"ブエノスアイレス",
+        "チリ":"サンティアゴ","ペルー":"リマ","南アフリカ":"プレトリア","ケニア":"ナイロビ",
+        "サウジアラビア":"リヤド","イラン":"テヘラン","イラク":"バグダッド","モンゴル":"ウランバートル",
+        "台湾":"台北","シンガポール":"シンガポール","マレーシア":"クアラルンプール",
+        "アイスランド":"レイキャビク","アイルランド":"ダブリン","ベルギー":"ブリュッセル","ルクセンブルク":"ルクセンブルク",
+        "エストニア":"タリン","ラトビア":"リガ","リトアニア":"ビリニュス","ベラルーシ":"ミンスク",
+        "ウクライナ":"キーウ","モルドバ":"キシナウ","ルーマニア":"ブカレスト","ブルガリア":"ソフィア",
+        "セルビア":"ベオグラード","クロアチア":"ザグレブ","スロベニア":"リュブリャナ","スロバキア":"ブラチスラバ",
+        "ボスニア・ヘルツェゴビナ":"サラエボ","北マケドニア":"スコピエ","アルバニア":"ティラナ","モンテネグロ":"ポドゴリツァ",
+        "マルタ":"バレッタ","キプロス":"ニコシア","ジョージア":"トビリシ","アルメニア":"エレバン","アゼルバイジャン":"バクー",
+        "カザフスタン":"アスタナ","ウズベキスタン":"タシケント","トルクメニスタン":"アシガバート","キルギス":"ビシュケク",
+        "タジキスタン":"ドゥシャンベ","アフガニスタン":"カブール","パキスタン":"イスラマバード","バングラデシュ":"ダッカ",
+        "ネパール":"カトマンズ","ブータン":"ティンプー","ミャンマー":"ネピドー","カンボジア":"プノンペン","ラオス":"ビエンチャン",
+        "スリランカ":"スリジャヤワルダナプラコッテ","ブルネイ":"バンダルスリブガワン","東ティモール":"ディリ",
+        "ヨルダン":"アンマン","レバノン":"ベイルート","シリア":"ダマスカス","クウェート":"クウェート","カタール":"ドーハ",
+        "バーレーン":"マナーマ","オマーン":"マスカット","イエメン":"サナア","アラブ首長国連邦":"アブダビ",
+        "モロッコ":"ラバト","アルジェリア":"アルジェ","チュニジア":"チュニス","リビア":"トリポリ","スーダン":"ハルツーム",
+        "エチオピア":"アディスアベバ","ナイジェリア":"アブジャ","ガーナ":"アクラ","セネガル":"ダカール",
+        "カメルーン":"ヤウンデ","コンゴ民主共和国":"キンシャサ","アンゴラ":"ルアンダ","ザンビア":"ルサカ",
+        "ジンバブエ":"ハラレ","モザンビーク":"マプト","マダガスカル":"アンタナナリボ","タンザニア":"ドドマ",
+        "ウガンダ":"カンパラ","ルワンダ":"キガリ","ソマリア":"モガディシュ","チャド":"ンジャメナ",
+        "ニジェール":"ニアメ","ギニア":"コナクリ","リベリア":"モンロビア","トーゴ":"ロメ","ベナン":"ポルトノボ",
+        "ガボン":"リーブルビル","モーリタニア":"ヌアクショット","セーシェル":"ビクトリア","モーリシャス":"ポートルイス",
+        "ボツワナ":"ハボローネ","ナミビア":"ウィントフック","マラウイ":"リロングウェ","南スーダン":"ジュバ",
+        "グアテマラ":"グアテマラシティ","ベリーズ":"ベルモパン","ホンジュラス":"テグシガルパ","エルサルバドル":"サンサルバドル",
+        "ニカラグア":"マナグア","コスタリカ":"サンホセ","パナマ":"パナマシティ","キューバ":"ハバナ",
+        "ジャマイカ":"キングストン","ハイチ":"ポルトープランス","ドミニカ共和国":"サントドミンゴ","バハマ":"ナッソー",
+        "コロンビア":"ボゴタ","ベネズエラ":"カラカス","エクアドル":"キト","ボリビア":"ラパス",
+        "パラグアイ":"アスンシオン","ウルグアイ":"モンテビデオ","ガイアナ":"ジョージタウン","スリナム":"パラマリボ",
+        "パプアニューギニア":"ポートモレスビー","フィジー":"スバ","ソロモン諸島":"ホニアラ","バヌアツ":"ポートビラ",
+        "サモア":"アピア","トンガ":"ヌクアロファ","キリバス":"タラワ","マーシャル諸島":"マジュロ","ナウル":"ヤレン"
+      };
+      /* prefecture -> prefectural capital */
+      var PREF_CAPITALS = {
+        "北海道":"札幌市","青森":"青森市","岩手":"盛岡市","宮城":"仙台市","秋田":"秋田市","山形":"山形市",
+        "福島":"福島市","茨城":"水戸市","栃木":"宇都宮市","群馬":"前橋市","埼玉":"さいたま市","千葉":"千葉市",
+        "東京":"新宿区","神奈川":"横浜市","新潟":"新潟市","富山":"富山市","石川":"金沢市","福井":"福井市",
+        "山梨":"甲府市","長野":"長野市","岐阜":"岐阜市","静岡":"静岡市","愛知":"名古屋市","三重":"津市",
+        "滋賀":"大津市","京都":"京都市","大阪":"大阪市","兵庫":"神戸市","奈良":"奈良市","和歌山":"和歌山市",
+        "鳥取":"鳥取市","島根":"松江市","岡山":"岡山市","広島":"広島市","山口":"山口市","徳島":"徳島市",
+        "香川":"高松市","愛媛":"松山市","高知":"高知市","福岡":"福岡市","佐賀":"佐賀市","長崎":"長崎市",
+        "熊本":"熊本市","大分":"大分市","宮崎":"宮崎市","鹿児島":"鹿児島市","沖縄":"那覇市"
+      };
+      /* readings of words (熟字訓・難読語・人名など) */
+      var WORD_READINGS = {
+        "明日":"あした","昨日":"きのう","今日":"きょう","明後日":"あさって","一昨日":"おととい",
+        "明明後日":"しあさって","一昨年":"おととし","昨年":"さくねん","今年":"ことし","去年":"きょねん",
+        "今朝":"けさ","今晩":"こんばん","昨夜":"ゆうべ","大人":"おとな","子供":"こども",
+        "海老":"えび","河豚":"ふぐ","鮪":"まぐろ","鮭":"さけ","鰯":"いわし","鯖":"さば",
+        "鯛":"たい","蛸":"たこ","烏賊":"いか","海月":"くらげ","海豚":"いるか","河馬":"かば",
+        "栗鼠":"りす","兎":"うさぎ","狸":"たぬき","狐":"きつね","狼":"おおかみ","鼬":"いたち",
+        "鼹鼠":"もぐら","蝙蝠":"こうもり","駱駝":"らくだ","麒麟":"きりん","孔雀":"くじゃく",
+        "鴉":"からす","烏":"からす","梟":"ふくろう","鷲":"わし","鳶":"とんび","燕":"つばめ",
+        "鶯":"うぐいす","雲雀":"ひばり","白鳥":"はくちょう","雉":"きじ","鶏":"にわとり",
+        "鮎":"あゆ","鱚":"きす","鯵":"あじ","鰹":"かつお","鰻":"うなぎ","鰤":"ぶり",
+        "鱸":"すずき","鮃":"ひらめ","鰈":"かれい","鱈":"たら","鰆":"さわら","鮟鱇":"あんこう",
+        "浅蜊":"あさり","蜆":"しじみ","蛤":"はまぐり","栄螺":"さざえ","鮑":"あわび","牡蠣":"かき",
+        "雲丹":"うに","海鼠":"なまこ","海鞘":"ほや",
+        "薔薇":"ばら","憂鬱":"ゆううつ","蒲公英":"たんぽぽ","向日葵":"ひまわり","朝顔":"あさがお",
+        "紫陽花":"あじさい","桜桃":"さくらんぼ","葡萄":"ぶどう","苺":"いちご","檸檬":"レモン",
+        "蜜柑":"みかん","林檎":"りんご","西瓜":"すいか","南瓜":"かぼちゃ","馬鈴薯":"じゃがいも",
+        "玉葱":"たまねぎ","人参":"にんじん","大蒜":"にんにく","生姜":"しょうが","胡椒":"こしょう",
+        "醤油":"しょうゆ","胡瓜":"きゅうり","茄子":"なす","勿忘草":"わすれなぐさ","女郎花":"おみなえし",
+        "桔梗":"ききょう","撫子":"なでしこ","杜若":"かきつばた","菖蒲":"あやめ","藤":"ふじ",
+        "萩":"はぎ","葛":"くず","蔦":"つた","蘭":"らん","菊":"きく","梅":"うめ",
+        "桃":"もも","杏":"あんず","李":"すもも","梨":"なし","柿":"かき","栗":"くり",
+        "楓":"かえで","楠":"くすのき","欅":"けやき","榎":"えのき","樫":"かし","椿":"つばき",
+        "山茶花":"さざんか","金木犀":"きんもくせい","梔子":"くちなし","睡蓮":"すいれん","蓮":"はす",
+        "沢山":"たくさん","大丈夫":"だいじょうぶ","曖昧":"あいまい","適当":"てきとう","出鱈目":"でたらめ",
+        "滅茶苦茶":"めちゃくちゃ","五月蝿い":"うるさい","相槌":"あいづち","独楽":"こま","凧":"たこ",
+        "独り言":"ひとりごと","吃驚":"びっくり","欠伸":"あくび","嚏":"くしゃみ",
+        "黄昏":"たそがれ","暁":"あかつき","東雲":"しののめ","朧":"おぼろ","霞":"かすみ",
+        "霧":"きり","時雨":"しぐれ","五月雨":"さみだれ","梅雨":"つゆ","雪崩":"なだれ",
+        "雹":"ひょう","霰":"あられ","雷":"かみなり","稲妻":"いなずま","嵐":"あらし",
+        "凪":"なぎ","木枯らし":"こがらし","陽炎":"かげろう","蜃気楼":"しんきろう","泡沫":"うたかた",
+        "団扇":"うちわ","河童":"かっぱ","達磨":"だるま","閻魔":"えんま","般若":"はんにゃ",
+        "観音":"かんのん","釈迦":"しゃか","蒟蒻":"こんにゃく","心太":"ところてん","羊羹":"ようかん",
+        "牡丹餅":"ぼたもち","粽":"ちまき","柏餅":"かしわもち","餡子":"あんこ","最中":"もなか",
+        "金平糖":"こんぺいとう","煎餅":"せんべい","佃煮":"つくだに","蒲鉾":"かまぼこ","竹輪":"ちくわ",
+        "薩摩揚げ":"さつまあげ","伊達巻":"だてまき","沢庵":"たくあん","福神漬け":"ふくじんづけ","味醂":"みりん",
+        "出汁":"だし","御御御付け":"おみおつけ","雲呑":"わんたん","焼売":"しゅうまい","餃子":"ぎょうざ",
+        "春巻":"はるまき","眼鏡":"めがね","合羽":"かっぱ","草履":"ぞうり","下駄":"げた",
+        "足袋":"たび","襦袢":"じゅばん","雪駄":"せった","草鞋":"わらじ",
+        "拳":"こぶし","踵":"かかと","脛":"すね","頬":"ほほ","瞼":"まぶた","睫毛":"まつげ",
+        "臍":"へそ","皺":"しわ",
+        "七夕":"たなばた","師走":"しわす","睦月":"むつき","如月":"きさらぎ","弥生":"やよい",
+        "皐月":"さつき","水無月":"みなづき","文月":"ふみづき","葉月":"はづき","長月":"ながつき",
+        "神無月":"かんなづき","霜月":"しもつき",
+        "羽生結弦":"はにゅう ゆづる","大谷翔平":"おおたに しょうへい","藤井聡太":"ふじい そうた",
+        "織田信長":"おだ のぶなが","豊臣秀吉":"とよとみ ひでよし","徳川家康":"とくがわ いえやす",
+        "紫式部":"むらさきしきぶ","清少納言":"せいしょうなごん","源義経":"みなもとの よしつね",
+        "平清盛":"たいらの きよもり","聖徳太子":"しょうとくたいし","福沢諭吉":"ふくざわ ゆきち",
+        "夏目漱石":"なつめ そうせき","芥川龍之介":"あくたがわ りゅうのすけ","太宰治":"だざい おさむ",
+        "宮沢賢治":"みやざわ けんじ","樋口一葉":"ひぐち いちよう","与謝野晶子":"よさの あきこ",
+        "野口英世":"のぐち ひでよ","北里柴三郎":"きたざと しばさぶろう","手塚治虫":"てづか おさむ",
+        "新渡戸稲造":"にとべ いなぞう"
+      };
+      /* single kanji: o = 音読み, k = 訓読み */
+      var KANJI = {
+        "一":{"o":"イチ・イツ","k":"ひと・ひと(つ)"},"二":{"o":"ニ","k":"ふた・ふた(つ)"},"三":{"o":"サン","k":"み・み(つ)"},
+        "四":{"o":"シ","k":"よ・よ(つ)・よん"},"五":{"o":"ゴ","k":"いつ・いつ(つ)"},"六":{"o":"ロク","k":"む・む(つ)"},
+        "七":{"o":"シチ","k":"なな・なな(つ)"},"八":{"o":"ハチ","k":"や・や(つ)"},"九":{"o":"キュウ・ク","k":"ここの・ここの(つ)"},
+        "十":{"o":"ジュウ","k":"とお・と"},"日":{"o":"ニチ・ジツ","k":"ひ・か"},"月":{"o":"ゲツ・ガツ","k":"つき"},
+        "年":{"o":"ネン","k":"とし"},"時":{"o":"ジ","k":"とき"},"分":{"o":"ブン・フン","k":"わ(ける)"},
+        "秒":{"o":"ビョウ","k":""},"週":{"o":"シュウ","k":""},"曜":{"o":"ヨウ","k":""},
+        "今":{"o":"コン・キン","k":"いま"},"前":{"o":"ゼン","k":"まえ"},"後":{"o":"ゴ・コウ","k":"のち・うし(ろ)・あと"},
+        "左":{"o":"サ","k":"ひだり"},"右":{"o":"ウ・ユウ","k":"みぎ"},"上":{"o":"ジョウ","k":"うえ・あ(がる)・のぼ(る)"},
+        "下":{"o":"カ・ゲ","k":"した・さ(がる)・くだ(る)"},"中":{"o":"チュウ","k":"なか"},"大":{"o":"ダイ・タイ","k":"おお・おお(きい)"},
+        "小":{"o":"ショウ","k":"ちい(さい)・こ・お"},"山":{"o":"サン","k":"やま"},"川":{"o":"セン","k":"かわ"},
+        "田":{"o":"デン","k":"た"},"野":{"o":"ヤ","k":"の"},"雨":{"o":"ウ","k":"あめ・あま"},"天":{"o":"テン","k":"あめ・あま"},
+        "気":{"o":"キ・ケ","k":""},"空":{"o":"クウ","k":"そら・あ(く)・から"},"海":{"o":"カイ","k":"うみ"},
+        "水":{"o":"スイ","k":"みず"},"火":{"o":"カ","k":"ひ"},"木":{"o":"モク・ボク","k":"き"},
+        "金":{"o":"キン・コン","k":"かね・かな"},"土":{"o":"ド・ト","k":"つち"},"星":{"o":"セイ","k":"ほし"},
+        "森":{"o":"シン","k":"もり"},"林":{"o":"リン","k":"はやし"},"花":{"o":"カ","k":"はな"},
+        "草":{"o":"ソウ","k":"くさ"},"犬":{"o":"ケン","k":"いぬ"},"猫":{"o":"ビョウ","k":"ねこ"},
+        "鳥":{"o":"チョウ","k":"とり"},"魚":{"o":"ギョ","k":"うお・さかな"},"馬":{"o":"バ","k":"うま"},
+        "牛":{"o":"ギュウ","k":"うし"},"力":{"o":"リキ・リョク","k":"ちから"},"心":{"o":"シン","k":"こころ"},
+        "手":{"o":"シュ","k":"て"},"目":{"o":"モク","k":"め"},"口":{"o":"コウ・ク","k":"くち"},
+        "耳":{"o":"ジ","k":"みみ"},"足":{"o":"ソク","k":"あし・た(りる)"},"体":{"o":"タイ","k":"からだ"},
+        "頭":{"o":"トウ","k":"あたま・かしら"},"顔":{"o":"ガン","k":"かお"},"声":{"o":"セイ","k":"こえ"},
+        "音":{"o":"オン","k":"おと・ね"},"文":{"o":"ブン・モン","k":"ふみ"},"字":{"o":"ジ","k":"あざ"},
+        "語":{"o":"ゴ","k":"かた(る)"},"読":{"o":"ドク","k":"よ(む)"},"書":{"o":"ショ","k":"か(く)"},
+        "画":{"o":"ガ・カク","k":""},"絵":{"o":"カイ・エ","k":""},"校":{"o":"コウ","k":""},
+        "先":{"o":"セン","k":"さき"},"生":{"o":"セイ・ショウ","k":"い(きる)・う(まれる)"},"友":{"o":"ユウ","k":"とも"},
+        "親":{"o":"シン","k":"おや・した(しい)"},"子":{"o":"シ・ス","k":"こ"},"父":{"o":"フ","k":"ちち"},
+        "母":{"o":"ボ","k":"はは"},"兄":{"o":"ケイ・キョウ","k":"あに"},"弟":{"o":"テイ","k":"おとうと"},
+        "姉":{"o":"シ","k":"あね"},"妹":{"o":"マイ","k":"いもうと"},"家":{"o":"カ・ケ","k":"いえ・や"},
+        "族":{"o":"ゾク","k":""},"人":{"o":"ジン・ニン","k":"ひと"},"男":{"o":"ダン・ナン","k":"おとこ"},
+        "女":{"o":"ジョ","k":"おんな・め"},"名":{"o":"メイ・ミョウ","k":"な"},"町":{"o":"チョウ","k":"まち"},
+        "村":{"o":"ソン","k":"むら"},"市":{"o":"シ","k":"いち"},"国":{"o":"コク","k":"くに"},
+        "北":{"o":"ホク","k":"きた"},"南":{"o":"ナン","k":"みなみ"},"東":{"o":"トウ","k":"ひがし"},
+        "西":{"o":"セイ・サイ","k":"にし"},"駅":{"o":"エキ","k":""},"車":{"o":"シャ","k":"くるま"},
+        "電":{"o":"デン","k":""},"店":{"o":"テン","k":"みせ"},"円":{"o":"エン","k":"まる(い)"},
+        "万":{"o":"マン・バン","k":""},"百":{"o":"ヒャク","k":""},"千":{"o":"セン","k":"ち"},
+        "何":{"o":"カ","k":"なに・なん"},"入":{"o":"ニュウ","k":"い(る)・はい(る)"},"出":{"o":"シュツ","k":"で(る)・だ(す)"},
+        "立":{"o":"リツ","k":"た(つ)"},"休":{"o":"キュウ","k":"やす(む)"},"働":{"o":"ドウ","k":"はたら(く)"},
+        "見":{"o":"ケン","k":"み(る)"},"聞":{"o":"ブン・モン","k":"き(く)"},"話":{"o":"ワ","k":"はな(す)・はなし"},
+        "言":{"o":"ゲン・ゴン","k":"い(う)・こと"},"食":{"o":"ショク","k":"た(べる)・く(う)"},"飲":{"o":"イン","k":"の(む)"},
+        "買":{"o":"バイ","k":"か(う)"},"売":{"o":"バイ","k":"う(る)"},"作":{"o":"サク・サ","k":"つく(る)"},
+        "会":{"o":"カイ","k":"あ(う)"},"社":{"o":"シャ","k":"やしろ"},"仕":{"o":"シ・ジ","k":"つか(える)"},
+        "事":{"o":"ジ","k":"こと"},"思":{"o":"シ","k":"おも(う)"},"知":{"o":"チ","k":"し(る)"},
+        "行":{"o":"コウ・ギョウ","k":"い(く)・ゆ(く)・おこな(う)"},"来":{"o":"ライ","k":"く(る)"},"帰":{"o":"キ","k":"かえ(る)"},
+        "歩":{"o":"ホ","k":"ある(く)"},"走":{"o":"ソウ","k":"はし(る)"},"止":{"o":"シ","k":"と(まる)"},
+        "正":{"o":"セイ・ショウ","k":"ただ(しい)"},"早":{"o":"ソウ","k":"はや(い)"},"遅":{"o":"チ","k":"おく(れる)・おそ(い)"},
+        "高":{"o":"コウ","k":"たか(い)"},"安":{"o":"アン","k":"やす(い)"},"新":{"o":"シン","k":"あたら(しい)・あら(た)"},
+        "古":{"o":"コ","k":"ふる(い)"},"長":{"o":"チョウ","k":"なが(い)"},"短":{"o":"タン","k":"みじか(い)"},
+        "明":{"o":"メイ","k":"あか(るい)・あき(らか)"},"暗":{"o":"アン","k":"くら(い)"},"強":{"o":"キョウ","k":"つよ(い)"},
+        "弱":{"o":"ジャク","k":"よわ(い)"},"暑":{"o":"ショ","k":"あつ(い)"},"寒":{"o":"カン","k":"さむ(い)"},
+        "冷":{"o":"レイ","k":"つめ(たい)・ひ(える)"},"暖":{"o":"ダン","k":"あたた(かい)"},"重":{"o":"ジュウ・チョウ","k":"おも(い)・かさ(ねる)"},
+        "軽":{"o":"ケイ","k":"かる(い)"},"広":{"o":"コウ","k":"ひろ(い)"},"近":{"o":"キン","k":"ちか(い)"},
+        "遠":{"o":"エン","k":"とお(い)"},"多":{"o":"タ","k":"おお(い)"},"少":{"o":"ショウ","k":"すく(ない)・すこ(し)"},
+        "白":{"o":"ハク","k":"しろ・しろ(い)"},"黒":{"o":"コク","k":"くろ・くろ(い)"},"赤":{"o":"セキ","k":"あか・あか(い)"},
+        "青":{"o":"セイ・ショウ","k":"あお・あお(い)"},"色":{"o":"ショク・シキ","k":"いろ"},"雪":{"o":"セツ","k":"ゆき"},
+        "雲":{"o":"ウン","k":"くも"},"風":{"o":"フウ","k":"かぜ"},"春":{"o":"シュン","k":"はる"},
+        "夏":{"o":"カ","k":"なつ"},"秋":{"o":"シュウ","k":"あき"},"冬":{"o":"トウ","k":"ふゆ"},
+        "朝":{"o":"チョウ","k":"あさ"},"昼":{"o":"チュウ","k":"ひる"},"夜":{"o":"ヤ","k":"よる・よ"},
+        "夕":{"o":"ユウ","k":"ゆう"},"晩":{"o":"バン","k":""},"楽":{"o":"ガク・ラク","k":"たの(しい)"},
+        "歌":{"o":"カ","k":"うた・うた(う)"},"本":{"o":"ホン","k":"もと"},"紙":{"o":"シ","k":"かみ"},
+        "答":{"o":"トウ","k":"こた(える)"},"問":{"o":"モン","k":"と(う)"},"題":{"o":"ダイ","k":""},
+        "練":{"o":"レン","k":"ね(る)"},"習":{"o":"シュウ","k":"なら(う)"},"勉":{"o":"ベン","k":"つと(める)"},
+        "考":{"o":"コウ","k":"かんが(える)"},"教":{"o":"キョウ","k":"おし(える)"},"室":{"o":"シツ","k":"むろ"},
+        "園":{"o":"エン","k":"その"},"場":{"o":"ジョウ","k":"ば"},"所":{"o":"ショ","k":"ところ"},
+        "地":{"o":"チ・ジ","k":""},"図":{"o":"ズ・ト","k":"はか(る)"},"館":{"o":"カン","k":""},
+        "屋":{"o":"オク","k":"や"},"道":{"o":"ドウ","k":"みち"},"橋":{"o":"キョウ","k":"はし"},
+        "港":{"o":"コウ","k":"みなと"},"船":{"o":"セン","k":"ふね"},"飛":{"o":"ヒ","k":"と(ぶ)"},
+        "機":{"o":"キ","k":""},"医":{"o":"イ","k":""},"薬":{"o":"ヤク","k":"くすり"},
+        "病":{"o":"ビョウ","k":"やまい"},"院":{"o":"イン","k":""},"歯":{"o":"シ","k":"は"},
+        "鼻":{"o":"ビ","k":"はな"},"映":{"o":"エイ","k":"うつ(る)"},"番":{"o":"バン","k":""},
+        "計":{"o":"ケイ","k":"はか(る)"},"愛":{"o":"アイ","k":""},"夢":{"o":"ム","k":"ゆめ"},
+        "希":{"o":"キ","k":""},"望":{"o":"ボウ","k":"のぞ(む)"},"運":{"o":"ウン","k":"はこ(ぶ)"},
+        "動":{"o":"ドウ","k":"うご(く)"},"静":{"o":"セイ","k":"しず(か)"},"島":{"o":"トウ","k":"しま"},
+        "命":{"o":"メイ","k":"いのち"},"神":{"o":"シン・ジン","k":"かみ"},"仏":{"o":"ブツ","k":"ほとけ"},
+        "寺":{"o":"ジ","k":"てら"},"京":{"o":"キョウ・ケイ","k":"みやこ"},"都":{"o":"ト・ツ","k":"みやこ"},
+        "県":{"o":"ケン","k":""},"府":{"o":"フ","k":""},"区":{"o":"ク","k":""},
+        "様":{"o":"ヨウ","k":"さま"},"私":{"o":"シ","k":"わたし・わたくし"},"君":{"o":"クン","k":"きみ"},
+        "誰":{"o":"スイ","k":"だれ"},"僕":{"o":"ボク","k":""},"憂":{"o":"ユウ","k":"うれ(える)・う(い)"},
+        "鬱":{"o":"ウツ","k":""},"漢":{"o":"カン","k":""},
+        "学":{"o":"ガク","k":"まな(ぶ)"},"員":{"o":"イン","k":""},"業":{"o":"ギョウ","k":"わざ"},
+        "界":{"o":"カイ","k":""},"間":{"o":"カン・ケン","k":"あいだ・ま"},"同":{"o":"ドウ","k":"おな(じ)"},
+        "局":{"o":"キョク","k":""},"役":{"o":"ヤク","k":""},"階":{"o":"カイ","k":""},
+        "段":{"o":"ダン","k":""},"線":{"o":"セン","k":""},"組":{"o":"ソ","k":"く(む)・くみ"},
+        "部":{"o":"ブ","k":""},"選":{"o":"セン","k":"えら(ぶ)"},"戦":{"o":"セン","k":"たたか(う)・いくさ"},
+        "決":{"o":"ケツ","k":"き(める)"},"定":{"o":"テイ","k":"さだ(める)"},"政":{"o":"セイ","k":"まつりごと"},
+        "経":{"o":"ケイ","k":"へ(る)"},"済":{"o":"サイ","k":"す(む)"},"税":{"o":"ゼイ","k":""},
+        "務":{"o":"ム","k":"つと(める)"},"鉄":{"o":"テツ","k":""},"銀":{"o":"ギン","k":""},
+        "銅":{"o":"ドウ","k":""},"布":{"o":"フ","k":"ぬの"},"服":{"o":"フク","k":""},
+        "袋":{"o":"タイ","k":"ふくろ"},"箱":{"o":"ソウ","k":"はこ"},"戸":{"o":"コ","k":"と"},
+        "窓":{"o":"ソウ","k":"まど"},"机":{"o":"キ","k":"つくえ"},"鍵":{"o":"ケン","k":"かぎ"},
+        "鏡":{"o":"キョウ","k":"かがみ"},"皿":{"o":"ベイ","k":"さら"},"茶":{"o":"チャ・サ","k":""},
+        "酒":{"o":"シュ","k":"さけ・さか"},"肉":{"o":"ニク","k":""},"米":{"o":"ベイ・マイ","k":"こめ"},
+        "麦":{"o":"バク","k":"むぎ"},"豆":{"o":"トウ・ズ","k":"まめ"},"油":{"o":"ユ","k":"あぶら"},
+        "塩":{"o":"エン","k":"しお"},"砂":{"o":"サ・シャ","k":"すな"},"糖":{"o":"トウ","k":""},
+        "氷":{"o":"ヒョウ","k":"こおり"},"炭":{"o":"タン","k":"すみ"},"石":{"o":"セキ・シャク","k":"いし"},
+        "岩":{"o":"ガン","k":"いわ"},"泉":{"o":"セン","k":"いずみ"},"池":{"o":"チ","k":"いけ"},
+        "湖":{"o":"コ","k":"みずうみ"},"沼":{"o":"ショウ","k":"ぬま"},"滝":{"o":"ロウ","k":"たき"},
+        "浜":{"o":"ヒン","k":"はま"},"岸":{"o":"ガン","k":"きし"},"坂":{"o":"ハン","k":"さか"},
+        "丘":{"o":"キュウ","k":"おか"},"谷":{"o":"コク","k":"たに"},"峰":{"o":"ホウ","k":"みね"},
+        "巣":{"o":"ソウ","k":"す"},"卵":{"o":"ラン","k":"たまご"},"羽":{"o":"ウ","k":"は・はね"},
+        "翼":{"o":"ヨク","k":"つばさ"},"尾":{"o":"ビ","k":"お"},"角":{"o":"カク","k":"かど・つの"},
+        "骨":{"o":"コツ","k":"ほね"},"皮":{"o":"ヒ","k":"かわ"},"毛":{"o":"モウ","k":"け"},
+        "血":{"o":"ケツ","k":"ち"},"汗":{"o":"カン","k":"あせ"},"涙":{"o":"ルイ","k":"なみだ"},
+        "笑":{"o":"ショウ","k":"わら(う)・え(む)"},"泣":{"o":"キュウ","k":"な(く)"},"怒":{"o":"ド","k":"おこ(る)・いか(る)"},
+        "喜":{"o":"キ","k":"よろこ(ぶ)"},"悲":{"o":"ヒ","k":"かな(しい)"},"怖":{"o":"フ","k":"こわ(い)"},
+        "恥":{"o":"チ","k":"は(じる)・はじ"},"忙":{"o":"ボウ","k":"いそが(しい)"},"忘":{"o":"ボウ","k":"わす(れる)"},
+        "覚":{"o":"カク","k":"おぼ(える)・さ(める)"},"感":{"o":"カン","k":""},"情":{"o":"ジョウ","k":"なさ(け)"},
+        "意":{"o":"イ","k":""},"味":{"o":"ミ","k":"あじ"},"匂":{"o":"","k":"にお(う)・にお(い)"}
+      };
+      /* ===== 追加辞書：詳細な単漢字（音・訓） ===== */
+      var MORE_KANJI = {
+        "悪":{"o":"アク・オ","k":"わる(い)・にく(む)"},"安":{"o":"アン","k":"やす(い)"},"案":{"o":"アン","k":""},"以":{"o":"イ","k":"も(って)"},
+        "異":{"o":"イ","k":"こと・こと(なる)"},"育":{"o":"イク","k":"そだ(つ)・はぐく(む)"},"医":{"o":"イ","k":""},"委":{"o":"イ","k":"ゆだ(ねる)"},
+        "囲":{"o":"イ","k":"かこ(む)"},"易":{"o":"エキ・イ","k":"やさ(しい)"},"益":{"o":"エキ","k":"ま(す)"},"液":{"o":"エキ","k":""},
+        "営":{"o":"エイ","k":"いとな(む)"},"永":{"o":"エイ","k":"なが(い)"},"泳":{"o":"エイ","k":"およ(ぐ)"},"英":{"o":"エイ","k":""},
+        "衛":{"o":"エイ","k":""},"越":{"o":"エツ","k":"こ(す)・こ(える)"},"延":{"o":"エン","k":"の(びる)・の(ばす)"},"沿":{"o":"エン","k":"そ(う)"},
+        "演":{"o":"エン","k":""},"炎":{"o":"エン","k":"ほのお"},"援":{"o":"エン","k":""},"王":{"o":"オウ","k":""},"応":{"o":"オウ","k":"こた(える)"},
+        "往":{"o":"オウ","k":""},"桜":{"o":"オウ","k":"さくら"},"押":{"o":"オウ","k":"お(す)・お(さえる)"},"奥":{"o":"オウ","k":"おく"},
+        "横":{"o":"オウ","k":"よこ"},"温":{"o":"オン","k":"あたた(かい)・あたた(まる)"},"穏":{"o":"オン","k":"おだ(やか)"},"仮":{"o":"カ・ケ","k":"かり"},
+        "価":{"o":"カ","k":"あたい"},"可":{"o":"カ","k":""},"河":{"o":"カ","k":"かわ"},"科":{"o":"カ","k":""},
+        "果":{"o":"カ","k":"は(たす)・くだもの"},"歌":{"o":"カ","k":"うた・うた(う)"},"荷":{"o":"カ","k":"に"},"課":{"o":"カ","k":""},
+        "貨":{"o":"カ","k":""},"過":{"o":"カ","k":"す(ぎる)・あやま(ち)"},"蚊":{"o":"ブン","k":"か"},"靴":{"o":"カ","k":"くつ"},
+        "革":{"o":"カク","k":"かわ"},"核":{"o":"カク","k":""},"格":{"o":"カク","k":""},"確":{"o":"カク","k":"たし(か)・たし(かめる)"},
+        "各":{"o":"カク","k":"おのおの"},"角":{"o":"カク","k":"かど・つの"},"較":{"o":"カク","k":"くら(べる)"},"郭":{"o":"カク","k":""},
+        "拡":{"o":"カク","k":"ひろ(がる)"},"隔":{"o":"カク","k":"へだ(てる)"},"閣":{"o":"カク","k":""},"干":{"o":"カン","k":"ほ(す)・ひ(る)"},
+        "刊":{"o":"カン","k":""},"肝":{"o":"カン","k":"きも"},"看":{"o":"カン","k":"み(る)"},"完":{"o":"カン","k":""},
+        "官":{"o":"カン","k":""},"冠":{"o":"カン","k":"かんむり"},"感":{"o":"カン","k":""},"慣":{"o":"カン","k":"な(れる)"},
+        "換":{"o":"カン","k":"か(える)"},"漢":{"o":"カン","k":""},"環":{"o":"カン","k":""},"監":{"o":"カン","k":""},
+        "緩":{"o":"カン","k":"ゆる(い)・ゆる(やか)"},"館":{"o":"カン","k":"やかた"},"観":{"o":"カン","k":"み(る)"},"歓":{"o":"カン","k":"よろこ(ぶ)"},
+        "簡":{"o":"カン","k":""},"陥":{"o":"カン","k":"おちい(る)"},"勧":{"o":"カン","k":"すす(める)"},"巻":{"o":"カン","k":"ま(く)・まき"},
+        "甘":{"o":"カン","k":"あま(い)"},"汗":{"o":"カン","k":"あせ"},"缶":{"o":"カン","k":""},"患":{"o":"カン","k":"わずら(う)"},
+        "乾":{"o":"カン","k":"かわ(く)・かわ(かす)"},"岸":{"o":"ガン","k":"きし"},"岩":{"o":"ガン","k":"いわ"},"眼":{"o":"ガン","k":"まなこ"},
+        "顔":{"o":"ガン","k":"かお"},"願":{"o":"ガン","k":"ねが(う)"},"企":{"o":"キ","k":"くわだ(てる)"},"危":{"o":"キ","k":"あぶ(ない)・あや(うい)"},
+        "机":{"o":"キ","k":"つくえ"},"帰":{"o":"キ","k":"かえ(る)"},"寄":{"o":"キ","k":"よ(る)・よ(せる)"},"希":{"o":"キ","k":""},
+        "基":{"o":"キ","k":"もと・もとい"},"揮":{"o":"キ","k":"ふる(う)"},"旗":{"o":"キ","k":"はた"},"期":{"o":"キ・ゴ","k":""},
+        "棋":{"o":"キ","k":""},"器":{"o":"キ","k":"うつわ"},"機":{"o":"キ","k":"はた"},"畿":{"o":"キ","k":"みやこ"},
+        "既":{"o":"キ","k":"すで(に)"},"紀":{"o":"キ","k":""},"記":{"o":"キ","k":"しる(す)"},"起":{"o":"キ","k":"お(きる)・お(こる)"},
+        "軌":{"o":"キ","k":""},"輝":{"o":"キ","k":"かがや(く)"},"飢":{"o":"キ","k":"う(える)"},"騎":{"o":"キ","k":""},"鬼":{"o":"キ","k":"おに"},
+        "貴":{"o":"キ","k":"たっと(い)・とうと(い)"},"偽":{"o":"ギ","k":"いつわ(る)・にせ"},"儀":{"o":"ギ","k":""},"戯":{"o":"ギ","k":"たわむ(れる)"},
+        "擬":{"o":"ギ","k":""},"犠":{"o":"ギ","k":"いけにえ"},"疑":{"o":"ギ","k":"うたが(う)"},"義":{"o":"ギ","k":""},"議":{"o":"ギ","k":""},
+        "菊":{"o":"キク","k":""},"吉":{"o":"キチ・キツ","k":""},"喫":{"o":"キツ","k":"の(む)"},"詰":{"o":"キツ","k":"つ(める)"},
+        "脚":{"o":"キャク","k":"あし"},"客":{"o":"キャク","k":""},"逆":{"o":"ギャク","k":"さか・さか(らう)"},"虐":{"o":"ギャク","k":"しいた(げる)"},
+        "丘":{"o":"キュウ","k":"おか"},"久":{"o":"キュウ","k":"ひさ(しい)"},"及":{"o":"キュウ","k":"およ(ぶ)"},"吸":{"o":"キュウ","k":"す(う)"},
+        "宮":{"o":"キュウ・グウ","k":"みや"},"弓":{"o":"キュウ","k":"ゆみ"},"急":{"o":"キュウ","k":"いそ(ぐ)"},"救":{"o":"キュウ","k":"すく(う)"},
+        "求":{"o":"キュウ","k":"もと(める)"},"泣":{"o":"キュウ","k":"な(く)"},"球":{"o":"キュウ","k":"たま"},"究":{"o":"キュウ","k":"きわ(める)"},
+        "窮":{"o":"キュウ","k":"きわ(める)"},"級":{"o":"キュウ","k":""},"糾":{"o":"キュウ","k":"ただ(す)"},"給":{"o":"キュウ","k":"たま(う)"},
+        "旧":{"o":"キュウ","k":"ふる(い)"},"牛":{"o":"ギュウ","k":"うし"},"去":{"o":"キョ・コ","k":"さ(る)"},"巨":{"o":"キョ","k":""},
+        "拠":{"o":"キョ","k":"よ(る)"},"挙":{"o":"キョ","k":"あ(げる)"},"虚":{"o":"キョ","k":"むな(しい)"},"許":{"o":"キョ","k":"ゆる(す)"},
+        "距":{"o":"キョ","k":""},"漁":{"o":"ギョ・リョウ","k":"あさ(る)"},"魚":{"o":"ギョ","k":"うお・さかな"},"享":{"o":"キョウ","k":"う(ける)"},
+        "京":{"o":"キョウ・ケイ","k":"みやこ"},"供":{"o":"キョウ","k":"そな(える)・とも"},"競":{"o":"キョウ","k":"きそ(う)・せ(る)"},"共":{"o":"キョウ","k":"とも"},
+        "凶":{"o":"キョウ","k":""},"協":{"o":"キョウ","k":""},"匡":{"o":"キョウ","k":"ただ(す)"},"卿":{"o":"キョウ","k":""},"叫":{"o":"キョウ","k":"さけ(ぶ)"},
+        "喬":{"o":"キョウ","k":"たか(い)"},"境":{"o":"キョウ","k":"さかい"},"峡":{"o":"キョウ","k":"はざま"},"強":{"o":"キョウ","k":"つよ(い)・し(いる)"},
+        "恐":{"o":"キョウ","k":"おそ(れる)・こわ(い)"},"恭":{"o":"キョウ","k":"うやうや(しい)"},"挟":{"o":"キョウ","k":"はさ(む)"},"教":{"o":"キョウ","k":"おし(える)・おそ(わる)"},
+        "橋":{"o":"キョウ","k":"はし"},"況":{"o":"キョウ","k":"いわん(や)"},"狂":{"o":"キョウ","k":"くる(う)"},"狭":{"o":"キョウ","k":"せま(い)"},
+        "矯":{"o":"キョウ","k":"た(める)"},"胸":{"o":"キョウ","k":"むね"},"脅":{"o":"キョウ","k":"おど(す)・おびや(かす)"},"興":{"o":"キョウ・コウ","k":"おこ(る)・おこ(す)"},
+        "響":{"o":"キョウ","k":"ひび(く)"},"驚":{"o":"キョウ","k":"おどろ(く)"},"仰":{"o":"ギョウ","k":"あお(ぐ)・お(っしゃる)"},"暁":{"o":"ギョウ","k":"あかつき"},
+        "凝":{"o":"ギョウ","k":"こ(る)・こ(らす)"},"業":{"o":"ギョウ","k":"わざ"},"局":{"o":"キョク","k":""},"曲":{"o":"キョク","k":"ま(がる)・ま(げる)"},
+        "極":{"o":"キョク","k":"きわ(める)・ごく"},"玉":{"o":"ギョク","k":"たま"},"勤":{"o":"キン","k":"つと(める)"},"均":{"o":"キン","k":"なら(す)"},
+        "禁":{"o":"キン","k":""},"斤":{"o":"キン","k":""},"筋":{"o":"キン","k":"すじ"},"緊":{"o":"キン","k":""},
+        "謹":{"o":"キン","k":"つつし(む)"},"近":{"o":"キン","k":"ちか(い)"},"金":{"o":"キン・コン","k":"かね・かな"},"錦":{"o":"キン","k":"にしき"},
+        "銀":{"o":"ギン","k":""},"区":{"o":"ク","k":""},"苦":{"o":"ク","k":"くる(しい)・にが(い)"},"駆":{"o":"ク","k":"か(ける)・か(る)"},
+        "具":{"o":"グ","k":""},"惧":{"o":"グ","k":"おそ(れる)"},"愚":{"o":"グ","k":"おろ(か)"},"偶":{"o":"グウ","k":"たま"},
+        "隅":{"o":"グウ","k":"すみ"},"遇":{"o":"グウ","k":""},"空":{"o":"クウ","k":"そら・あ(く)・から"},"熊":{"o":"ユウ","k":"くま"},
+        "君":{"o":"クン","k":"きみ"},"訓":{"o":"クン","k":""},"群":{"o":"グン","k":"む(れる)・むれ"},"軍":{"o":"グン","k":""},
+        "郡":{"o":"グン","k":"こおり"},"形":{"o":"ケイ・ギョウ","k":"かた・かたち"},"径":{"o":"ケイ","k":"みち"},"恵":{"o":"ケイ","k":"めぐ(む)"},
+        "慶":{"o":"ケイ","k":"よろこ(び)"},"憩":{"o":"ケイ","k":"いこ(う)"},"掲":{"o":"ケイ","k":"かか(げる)"},"携":{"o":"ケイ","k":"たずさ(える)"},
+        "敬":{"o":"ケイ","k":"うやま(う)"},"景":{"o":"ケイ","k":""},"桂":{"o":"ケイ","k":"かつら"},"渓":{"o":"ケイ","k":"たに"},"系":{"o":"ケイ","k":""},
+        "経":{"o":"ケイ","k":"へ(る)・た(つ)"},"継":{"o":"ケイ","k":"つ(ぐ)"},"罫":{"o":"ケイ","k":""},"茎":{"o":"ケイ","k":"くき"},
+        "蛍":{"o":"ケイ","k":"ほたる"},"計":{"o":"ケイ","k":"はか(る)・はか(らう)"},"警":{"o":"ケイ","k":"いまし(める)"},"軽":{"o":"ケイ","k":"かる(い)・かろ(やか)"},
+        "頸":{"o":"ケイ","k":"くび"},"鶏":{"o":"ケイ","k":"にわとり"},"迎":{"o":"ゲイ","k":"むか(える)"},"撃":{"o":"ゲキ","k":"う(つ)"},
+        "劇":{"o":"ゲキ","k":""},"隙":{"o":"ゲキ","k":"すき"},"傑":{"o":"ケツ","k":"すぐ(れる)"},"欠":{"o":"ケツ","k":"か(ける)・か(く)"},
+        "決":{"o":"ケツ","k":"き(める)・き(まる)"},"潔":{"o":"ケツ","k":"いさぎよ(い)"},"穴":{"o":"ケツ","k":"あな"},"結":{"o":"ケツ","k":"むす(ぶ)・ゆ(う)"},
+        "血":{"o":"ケツ","k":"ち"},"月":{"o":"ゲツ・ガツ","k":"つき"},"件":{"o":"ケン","k":""},"倹":{"o":"ケン","k":"つま(しい)"},
+        "健":{"o":"ケン","k":"すこ(やか)"},"兼":{"o":"ケン","k":"か(ねる)"},"剣":{"o":"ケン","k":"つるぎ"},"険":{"o":"ケン","k":"けわ(しい)"},
+        "圏":{"o":"ケン","k":""},"堅":{"o":"ケン","k":"かた(い)"},"嫌":{"o":"ケン","k":"きら(う)・いや"},"建":{"o":"ケン","k":"た(てる)・た(つ)"},
+        "憲":{"o":"ケン","k":""},"懸":{"o":"ケン","k":"か(ける)・か(かる)"},"検":{"o":"ケン","k":"しら(べる)"},"権":{"o":"ケン・ゴン","k":"おもり"},
+        "犬":{"o":"ケン","k":"いぬ"},"献":{"o":"ケン","k":"たてまつ(る)"},"研":{"o":"ケン","k":"と(ぐ)"},"県":{"o":"ケン","k":"か(ける)"},
+        "肩":{"o":"ケン","k":"かた"},"見":{"o":"ケン","k":"み(る)"},"軒":{"o":"ケン","k":"のき"},"険":{"o":"ケン","k":"けわ(しい)"},
+        "元":{"o":"ゲン・ガン","k":"もと"},"原":{"o":"ゲン","k":"はら"},"厳":{"o":"ゲン","k":"おごそ(か)・きび(しい)"},"幻":{"o":"ゲン","k":"まぼろし"},
+        "弦":{"o":"ゲン","k":"つる"},"減":{"o":"ゲン","k":"へ(る)・へ(らす)"},"源":{"o":"ゲン","k":"みなもと"},"玄":{"o":"ゲン","k":"くろ"},
+        "現":{"o":"ゲン","k":"あらわ(れる)・あらわ(す)"},"言":{"o":"ゲン・ゴン","k":"い(う)・こと"},"限":{"o":"ゲン","k":"かぎ(る)"},
+        "個":{"o":"コ","k":""},"古":{"o":"コ","k":"ふる(い)"},"呼":{"o":"コ","k":"よ(ぶ)"},"固":{"o":"コ","k":"かた(める)・かた(い)"},
+        "姑":{"o":"コ","k":"しゅうとめ"},"枯":{"o":"コ","k":"か(れる)・か(らす)"},"個":{"o":"コ","k":""},"湖":{"o":"コ","k":"みずうみ"},
+        "雇":{"o":"コ","k":"やと(う)"},"顧":{"o":"コ","k":"かえり(みる)"},"鼓":{"o":"コ","k":"つづみ"},"五":{"o":"ゴ","k":"いつ・いつ(つ)"},
+        "互":{"o":"ゴ","k":"たが(い)"},"吾":{"o":"ゴ","k":"われ"},"娯":{"o":"ゴ","k":""},"後":{"o":"ゴ・コウ","k":"のち・うし(ろ)・あと"},
+        "御":{"o":"ゴ・ギョ","k":"おん・お・み"},"悟":{"o":"ゴ","k":"さと(る)"},"語":{"o":"ゴ","k":"かた(る)・かた(らう)"},"誤":{"o":"ゴ","k":"あやま(る)"},
+        "護":{"o":"ゴ","k":"まも(る)"},"交":{"o":"コウ","k":"まじ(わる)・ま(ぜる)・か(う)"},"侯":{"o":"コウ","k":""},"光":{"o":"コウ","k":"ひか(る)・ひかり"},
+        "公":{"o":"コウ","k":"おおやけ"},"功":{"o":"コウ","k":""},"効":{"o":"コウ","k":"き(く)"},"厚":{"o":"コウ","k":"あつ(い)"},
+        "口":{"o":"コウ・ク","k":"くち"},"向":{"o":"コウ","k":"む(く)・む(こう)"},"后":{"o":"コウ","k":"きさき"},"喉":{"o":"コウ","k":"のど"},
+        "坑":{"o":"コウ","k":""},"好":{"o":"コウ","k":"この(む)・す(く)"},"孝":{"o":"コウ","k":""},"宏":{"o":"コウ","k":"ひろ(い)"},
+        "工":{"o":"コウ・ク","k":""},"巧":{"o":"コウ","k":"たく(み)"},"幸":{"o":"コウ","k":"さいわ(い)・しあわ(せ)"},"広":{"o":"コウ","k":"ひろ(い)・ひろ(まる)"},
+        "弘":{"o":"コウ","k":"ひろ(い)"},"康":{"o":"コウ","k":""},"恒":{"o":"コウ","k":"つね"},"慌":{"o":"コウ","k":"あわ(てる)・あわ(ただしい)"},
+        "抗":{"o":"コウ","k":"あらが(う)"},"控":{"o":"コウ","k":"ひか(える)"},"攻":{"o":"コウ","k":"せ(める)"},"更":{"o":"コウ","k":"さら・ふ(ける)"},
+        "校":{"o":"コウ","k":""},"梗":{"o":"コウ","k":""},"構":{"o":"コウ","k":"かま(える)・かま(う)"},"江":{"o":"コウ","k":"え"},
+        "洪":{"o":"コウ","k":""},"港":{"o":"コウ","k":"みなと"},"溝":{"o":"コウ","k":"みぞ"},"甲":{"o":"コウ・カン","k":""},"皇":{"o":"コウ・オウ","k":""},
+        "硬":{"o":"コウ","k":"かた(い)"},"稿":{"o":"コウ","k":"わら"},"紅":{"o":"コウ・ク","k":"べに・くれない"},"絞":{"o":"コウ","k":"しぼ(る)・し(める)"},
+        "綱":{"o":"コウ","k":"つな"},"考":{"o":"コウ","k":"かんが(える)"},"行":{"o":"コウ・ギョウ","k":"い(く)・ゆ(く)・おこな(う)"},"衡":{"o":"コウ","k":""},
+        "講":{"o":"コウ","k":""},"購":{"o":"コウ","k":""},"郊":{"o":"コウ","k":""},"酵":{"o":"コウ","k":""},"鉱":{"o":"コウ","k":"あらがね"},
+        "鋼":{"o":"コウ","k":"はがね"},"降":{"o":"コウ","k":"お(りる)・お(ろす)・ふ(る)"},"香":{"o":"コウ","k":"か・かお(り)"},"荒":{"o":"コウ","k":"あら(い)・あ(れる)"},
+        "高":{"o":"コウ","k":"たか(い)・たか"},"鴻":{"o":"コウ","k":"おおとり"},"黄":{"o":"コウ・オウ","k":"き"},"合":{"o":"ゴウ・カッ","k":"あ(う)・あ(わせる)"},
+        "拷":{"o":"ゴウ","k":""},"剛":{"o":"ゴウ","k":""},"豪":{"o":"ゴウ","k":"えら(い)"},"克":{"o":"コク","k":"か(つ)"},
+        "刻":{"o":"コク","k":"きざ(む)"},"告":{"o":"コク","k":"つ(げる)"},"国":{"o":"コク","k":"くに"},"穀":{"o":"コク","k":""},
+        "酷":{"o":"コク","k":"ひど(い)"},"黒":{"o":"コク","k":"くろ・くろ(い)"},"腰":{"o":"ヨウ","k":"こし"},"骨":{"o":"コツ","k":"ほね"},
+        "込":{"o":"","k":"こ(む)・こ(める)"},"此":{"o":"","k":"これ"},"今":{"o":"コン・キン","k":"いま"},"困":{"o":"コン","k":"こま(る)"},
+        "婚":{"o":"コン","k":""},"混":{"o":"コン","k":"ま(じる)・ま(ぜる)"},"根":{"o":"コン","k":"ね"},"魂":{"o":"コン","k":"たましい"},
+        "墾":{"o":"コン","k":"はり"},"懇":{"o":"コン","k":"ねんご(ろ)"},"痕":{"o":"コン","k":"あと"},"紺":{"o":"コン","k":""},
+        "些":{"o":"サ","k":""},"佐":{"o":"サ","k":""},"唆":{"o":"サ","k":"そそのか(す)"},"左":{"o":"サ","k":"ひだり"},
+        "差":{"o":"サ","k":"さ(す)"},"査":{"o":"サ","k":""},"砂":{"o":"サ・シャ","k":"すな"},"詐":{"o":"サ","k":"いつわ(る)"},
+        "鎖":{"o":"サ","k":"くさり・とざ(す)"},"座":{"o":"ザ","k":"すわ(る)"},"挫":{"o":"ザ","k":"くじ(ける)"},"債":{"o":"サイ","k":""},
+        "催":{"o":"サイ","k":"もよお(す)・もよお(し)"},"再":{"o":"サイ","k":"ふたた(び)"},"最":{"o":"サイ","k":"もっと(も)・つま"},
+        "哉":{"o":"サイ","k":"かな"},"塞":{"o":"サイ・ソク","k":"ふさ(ぐ)"},"妻":{"o":"サイ","k":"つま"},"宰":{"o":"サイ","k":""},
+        "彩":{"o":"サイ","k":"いろど(る)"},"才":{"o":"サイ","k":""},"採":{"o":"サイ","k":"と(る)"},"歳":{"o":"サイ","k":"とし"},
+        "済":{"o":"サイ","k":"す(む)・す(ます)"},"災":{"o":"サイ","k":"わざわ(い)"},"砕":{"o":"サイ","k":"くだ(く)・くだ(ける)"},
+        "祭":{"o":"サイ","k":"まつ(る)・まつ(り)"},"細":{"o":"サイ","k":"ほそ(い)・こま(かい)"},"裁":{"o":"サイ","k":"た(つ)・さば(く)"},
+        "載":{"o":"サイ","k":"の(せる)・の(る)"},"際":{"o":"サイ","k":"きわ"},"菜":{"o":"サイ","k":"な"},"頼":{"o":"ライ","k":"たの(む)・たよ(る)"}
+      };
+      Object.keys(MORE_KANJI).forEach(function(k){ if(!KANJI[k]) KANJI[k]=MORE_KANJI[k]; });
+      /* ===== 補足：頻出漢字と動詞・日常熟語 ===== */
+      var MORE_KANJI2 = {
+        "報":{"o":"ホウ","k":"むく(いる)"},"物":{"o":"ブツ・モツ","k":"もの"},"良":{"o":"リョウ","k":"よ(い)"},
+        "届":{"o":"カイ","k":"とど(く)・とど(ける)"},"連":{"o":"レン","k":"つら(なる)・つ(れる)"},"達":{"o":"タツ","k":"たち"},
+        "到":{"o":"トウ","k":"いた(る)"},"隊":{"o":"タイ","k":""},"陽":{"o":"ヨウ","k":""},"陰":{"o":"イン","k":"かげ"},
+        "除":{"o":"ジョ・ジ","k":"のぞ(く)"},"陸":{"o":"リク","k":"おか"},"雄":{"o":"ユウ","k":"お・おす"},
+        "雅":{"o":"ガ","k":"みや(び)"},"雰":{"o":"フン","k":""},"零":{"o":"レイ","k":"ぜろ"},"雷":{"o":"ライ","k":"かみなり"},
+        "霧":{"o":"ム","k":"きり"},"露":{"o":"ロ","k":"つゆ"},"霜":{"o":"ソウ","k":"しも"},"霞":{"o":"カ","k":"かすみ"},
+        "情":{"o":"ジョウ","k":"なさ(け)"},"報":{"o":"ホウ","k":"むく(いる)"},"復":{"o":"フク","k":"また"},"得":{"o":"トク","k":"え(る)・う(る)"},
+        "徴":{"o":"チョウ","k":"しるし"},"徳":{"o":"トク","k":""},"聴":{"o":"チョウ","k":"き(く)"},"懐":{"o":"カイ","k":"ふところ・なつ(かしい)"}
+      };
+      Object.keys(MORE_KANJI2).forEach(function(k){ if(!KANJI[k]) KANJI[k]=MORE_KANJI2[k]; });
+      Object.assign(WORD_READINGS, {
+        "情報":"じょうほう","社会":"しゃかい","食べ物":"たべもの","飲み物":"のみもの","買い物":"かいもの","贈り物":"おくりもの",
+        "食べる":"たべる","飲む":"のむ","降る":"ふる","降りる":"おりる","行く":"いく","来る":"くる","帰る":"かえる","会う":"あう",
+        "買う":"かう","売る":"うる","作る":"つくる","思う":"おもう","知る":"しる","見る":"みる","聞く":"きく","話す":"はなす",
+        "読む":"よむ","書く":"かく","働く":"はたらく","遊ぶ":"あそぶ","泳ぐ":"およぐ","笑う":"わらう","泣く":"なく","怒る":"おこる",
+        "教える":"おしえる","習う":"ならう","忘れる":"わすれる","覚える":"おぼえる","起きる":"おきる","寝る":"ねる","走る":"はしる",
+        "歩く":"あるく","止まる":"とまる","始まる":"はじまる","終わる":"おわる","晴れる":"はれる","曇る":"くもる","吹く":"ふく",
+        "良い":"よい","天気":"てんき","今日":"きょう","明日":"あした","昨日":"きのう","気持ち":"きもち","大好き":"だいすき",
+        "雰囲気":"ふんいき","相変わらず":"あいかわらず","久しぶり":"ひさしぶり","久々":"ひさびさ",
+        "鬱陶しい":"うっとうしい","龍":"りゅう"
+      });
+      var MORE_KANJI3 = {
+        "龍":{"o":"リュウ","k":"たつ"},"陶":{"o":"トウ","k":""},"鳳":{"o":"ホウ","k":""},"亀":{"o":"キ","k":"かめ"},
+        "鶴":{"o":"カク","k":"つる"},"麒":{"o":"キ","k":""},"麟":{"o":"リン","k":""},"翔":{"o":"ショウ","k":"かけ(る)"},
+        "凛":{"o":"リン","k":""},"熙":{"o":"キ","k":""},"澪":{"o":"","k":"みお"},"梓":{"o":"シ","k":"あずさ"},
+        "葵":{"o":"キ","k":"あおい"},"楓":{"o":"フウ","k":"かえで"},"菫":{"o":"キン","k":"すみれ"},"蘭":{"o":"ラン","k":""},
+        "翠":{"o":"スイ","k":"みどり"},"瑠":{"o":"ル","k":""},"璃":{"o":"リ","k":""},"乃":{"o":"ナイ","k":"の"},
+        "綾":{"o":"リョウ","k":"あや"},"紗":{"o":"サ・シャ","k":""},"莉":{"o":"リ","k":""},"奈":{"o":"ナ","k":""},
+        "咲":{"o":"","k":"さ(く)"},"湊":{"o":"ソウ","k":"みなと"},"颯":{"o":"サツ","k":""},"煌":{"o":"コウ","k":"きらめ(く)"}
+      };
+      Object.keys(MORE_KANJI3).forEach(function(k){ if(!KANJI[k]) KANJI[k]=MORE_KANJI3[k]; });
+      /* ===== 追加：言葉の読み（熟字訓・日常語・人名） ===== */
+      Object.assign(WORD_READINGS, {
+        "一人":"ひとり","二人":"ふたり","一日":"ついたち","二日":"ふつか","三日":"みっか","四日":"よっか","五日":"いつか",
+        "六日":"むいか","七日":"なのか","八日":"ようか","九日":"ここのか","十日":"とおか","二十日":"はつか","二十歳":"はたち",
+        "三人":"さんにん","何人":"なんにん","大人":"おとな","素人":"しろうと","玄人":"くろうと","仲人":"なこうど","若人":"わこうど",
+        "下手":"へた","上手":"じょうず","稽古":"けいこ","我慢":"がまん","世話":"せわ","相撲":"すもう","歌舞伎":"かぶき",
+        "相変わらず":"あいかわらず","お疲れ様":"おつかれさま","大晦日":"おおみそか","元日":"がんじつ","節分":"せつぶん",
+        "雛祭り":"ひなまつり","七夕":"たなばた","お盆":"おぼん","十五夜":"じゅうごや","師走":"しわす",
+        "梅雨入り":"つゆいり","梅雨明け":"つゆあけ","木漏れ日":"こもれび","朝焼け":"あさやけ","夕焼け":"ゆうやけ",
+        "雪解け":"ゆきどけ","初雪":"はつゆき","大雪":"おおゆき","吹雪":"ふぶき","時化":"しけ",
+        "玄関":"げんかん","居間":"いま","台所":"だいどころ","風呂":"ふろ","便所":"べんじょ","押入れ":"おしいれ",
+        "布団":"ふとん","蒲団":"ふとん","枕":"まくら","箪笥":"たんす","暖簾":"のれん","障子":"しょうじ","襖":"ふすま",
+        "電話":"でんわ","電車":"でんしゃ","自転車":"じてんしゃ","自動車":"じどうしゃ","新幹線":"しんかんせん","飛行機":"ひこうき",
+        "新聞":"しんぶん","雑誌":"ざっし","辞書":"じしょ","教科書":"きょうかしょ","宿題":"しゅくだい","試験":"しけん",
+        "学校":"がっこう","小学校":"しょうがっこう","中学校":"ちゅうがっこう","高校":"こうこう","大学":"だいがく","幼稚園":"ようちえん",
+        "先生":"せんせい","生徒":"せいと","友達":"ともだち","家族":"かぞく","両親":"りょうしん","兄弟":"きょうだい","姉妹":"しまい",
+        "会社":"かいしゃ","銀行":"ぎんこう","病院":"びょういん","薬局":"やっきょく","郵便局":"ゆうびんきょく","図書館":"としょかん",
+        "映画館":"えいがかん","美術館":"びじゅつかん","博物館":"はくぶつかん","水族館":"すいぞくかん","動物園":"どうぶつえん",
+        "飛行場":"ひこうじょう","空港":"くうこう","港":"みなと","市場":"いちば","商店街":"しょうてんがい",
+        "今日":"きょう","明日":"あした","明後日":"あさって","昨日":"きのう","一昨日":"おととい","今朝":"けさ","今晩":"こんばん","今夜":"こんや",
+        "毎朝":"まいあさ","毎晩":"まいばん","毎週":"まいしゅう","毎月":"まいつき","毎年":"まいねん","来週":"らいしゅう","再来週":"さらいしゅう",
+        "先週":"せんしゅう","来月":"らいげつ","先月":"せんげつ","来年":"らいねん","去年":"きょねん","一昨年":"おととし",
+        "佐藤":"さとう","鈴木":"すずき","高橋":"たかはし","田中":"たなか","渡辺":"わたなべ","伊藤":"いとう","山本":"やまもと","中村":"なかむら",
+        "小林":"こばやし","加藤":"かとう","吉田":"よしだ","山田":"やまだ","佐々木":"ささき","山口":"やまぐち","松本":"まつもと","井上":"いのうえ",
+        "木村":"きむら","林":"はやし","斎藤":"さいとう","清水":"しみず","山崎":"やまざき","森":"もり","池田":"いけだ","橋本":"はしもと",
+        "阿部":"あべ","石川":"いしかわ","山下":"やました","中山":"なかやま","石井":"いしい","小川":"おがわ","前田":"まえだ","岡田":"おかだ",
+        "長谷川":"はせがわ","後藤":"ごとう","藤田":"ふじた","近藤":"こんどう","坂本":"さかもと","村上":"むらかみ","遠藤":"えんどう","青木":"あおき",
+        "福田":"ふくだ","太田":"おおた","西村":"にしむら","藤井":"ふじい","金子":"かねこ","岡本":"おかもと","藤原":"ふじわら","中島":"なかじま",
+        "三浦":"みうら","中野":"なかの","小野":"おの","田村":"たむら","竹内":"たけうち","中山":"なかやま","石田":"いしだ","上田":"うえだ",
+        "森田":"もりた","原田":"はらだ","酒井":"さかい","工藤":"くどう","横山":"よこやま","宮崎":"みやざき","宮本":"みやもと","内田":"うちだ",
+        "高木":"たかぎ","安藤":"あんどう","島田":"しまだ","谷口":"たにぐち","大野":"おおの","丸山":"まるやま","今井":"いまい","河野":"こうの",
+        "小島":"こじま","藤本":"ふじもと","村田":"むらた","武田":"たけだ","上野":"うえの","杉山":"すぎやま","増田":"ますだ","小山":"おやま",
+        "大塚":"おおつか","平野":"ひらの","菅原":"すがわら","千葉":"ちば","久保":"くぼ","松井":"まつい","木下":"きのした","岩崎":"いわさき",
+        "野口":"のぐち","野村":"のむら","野上":"のがみ","松尾":"まつお","菊地":"きくち","佐野":"さの","木村":"きむら","杉本":"すぎもと","市川":"いちかわ",
+        "古川":"ふるかわ","森本":"もりもと","大村":"おおむら","加藤":"かとう","吉川":"よしかわ","和田":"わだ","中山":"なかやま","石原":"いしはら",
+        "気持ち":"きもち","心配":"しんぱい","安心":"あんしん","大丈夫":"だいじょうぶ","大変":"たいへん","本当":"ほんとう","絶対":"ぜったい",
+        "最近":"さいきん","最初":"さいしょ","最後":"さいご","全部":"ぜんぶ","誰か":"だれか","何か":"なにか","いつか":"いつか","どこか":"どこか",
+        "明日":"あした","明後日":"あさって","向こう":"むこう","隣":"となり","辺り":"あたり","回り":"まわり","周り":"まわり",
+        "身体":"からだ","体":"からだ","頭痛":"ずつう","腹痛":"ふくつう","風邪":"かぜ","熱":"ねつ",
+        "美味しい":"おいしい","忙しい":"いそがしい","嬉しい":"うれしい","楽しい":"たのしい","悲しい":"かなしい","寂しい":"さびしい",
+        "素敵":"すてき","素直":"すなお","正直":"しょうじき","真面目":"まじめ","有名":"ゆうめい","元気":"げんき","勇気":"ゆうき",
+        "景色":"けしき","紅葉":"もみじ","桜":"さくら","梅":"うめ","桃":"もも","竹":"たけ","松":"まつ",
+        "相方":"あいかた","片方":"かたほう","両方":"りょうほう","味方":"みかた","見方":"みかた","言い方":"いいかた",
+        "相性":"あいしょう","愛情":"あいじょう","友情":"ゆうじょう","感情":"かんじょう","感動":"かんどう","感謝":"かんしゃ",
+        "挨拶":"あいさつ","返事":"へんじ","約束":"やくそく","相談":"そうだん","質問":"しつもん","回答":"かいとう","説明":"せつめい",
+        "仕事":"しごと","勉強":"べんきょう","練習":"れんしゅう","運動":"うんどう","旅行":"りょこう","買い物":"かいもの","散歩":"さんぽ",
+        "料理":"りょうり","掃除":"そうじ","洗濯":"せんたく","選択":"せんたく","準備":"じゅんび","予約":"よやく","連絡":"れんらく",
+        "電波":"でんぱ","電池":"でんち","電気":"でんき","天気":"てんき","空気":"くうき","人気":"にんき","元気":"げんき"
+      });
+      /* ===== 追加：地名・駅名など ===== */
+      Object.assign(READINGS, {
+        "秋葉原":"あきはばら","浅草":"あさくさ","上野":"うえの","池袋":"いけぶくろ","新橋":"しんばし","吉祥寺":"きちじょうじ",
+        "高円寺":"こうえんじ","下北沢":"しもきたざわ","自由が丘":"じゆうがおか","二子玉川":"ふたこたまがわ","武蔵小杉":"むさしこすぎ",
+        "大手町":"おおてまち","霞が関":"かすみがせき","虎ノ門":"とらのもん","六本木":"ろっぽんぎ","麻布":"あざぶ","広尾":"ひろお",
+        "恵比寿":"えびす","中目黒":"なかめぐろ","学芸大学":"がくげいだいがく","都立大学":"とりつだいがく","経堂":"きょうどう",
+        "用賀":"ようが","桜新町":"さくらしんまち","心斎橋":"しんさいばし","天王寺":"てんのうじ","鶴橋":"つるはし","天満":"てんま",
+        "日本橋":"にほんばし","人形町":"にんぎょうちょう","月島":"つきしま","門前仲町":"もんぜんなかちょう","清澄白河":"きよすみしらかわ",
+        "蔵前":"くらまえ","錦糸町":"きんしちょう","亀戸":"かめいど","小岩":"こいわ","新小岩":"しんこいわ","金町":"かなまち",
+        "北千住":"きたせんじゅ","綾瀬":"あやせ","亀有":"かめあり","柴又":"しばまた","堀切":"ほりきり","牛田":"うしだ",
+        "町屋":"まちや","西日暮里":"にしにっぽり","日暮里":"にっぽり","鶯谷":"うぐいすだに","御徒町":"おかちまち","神田":"かんだ",
+        "有楽町":"ゆうらくちょう","浜松町":"はままつちょう","田町":"たまち","高輪":"たかなわ","五反田":"ごたんだ","目黒":"めぐろ",
+        "大崎":"おおさき","天王洲":"てんのうず","品川":"しながわ","新川崎":"しんかわさき","鹿島田":"かしまだ","平間":"ひらま",
+        "向河原":"むかいがわら","武蔵中原":"むさしなかはら","武蔵新城":"むさししんじょう","武蔵溝ノ口":"むさしみぞのくち","津田山":"つだやま",
+        "久地":"くじ","宿河原":"しゅくがわら","登戸":"のぼりと","中野島":"なかのしま","稲田堤":"いなだづつみ","京王稲田堤":"けいおういなだづつみ",
+        "読売ランド前":"よみうりランドまえ","百合ヶ丘":"ゆりがおか","新百合ヶ丘":"しんゆりがおか","柿生":"かきお","鶴川":"つるかわ",
+        "玉川学園前":"たまがわがくえんまえ","町田":"まちだ","相模大野":"さがみおおの","小田急相模原":"おだきゅうさがみはら","東林間":"とうりんかん",
+        "中央林間":"ちゅうおうりんかん","つきみ野":"つきみの","南林間":"みなみりんかん","鶴間":"つるま","大和":"やまと","桜ヶ丘":"さくらがおか",
+        "高座渋谷":"こうざしぶや","長後":"ちょうご","湘南台":"しょうなんだい","六会日大前":"むつあいにちだいまえ","善行":"ぜんぎょう","藤沢本町":"ふじさわほんまち",
+        "本鵠沼":"ほんくげぬま","鵠沼海岸":"くげぬまかいがん","片瀬江ノ島":"かたせえのしま","江ノ島":"えのしま","鎌倉高校前":"かまくらこうこうまえ",
+        "七里ヶ浜":"しちりがはま","稲村ヶ崎":"いなむらがさき","極楽寺":"ごくらくじ","長谷":"はせ","由比ヶ浜":"ゆいがはま","和田塚":"わだづか",
+        "逗子":"ずし","葉山":"はやま","三浦海岸":"みうらかいがん","三崎口":"みさきぐち","油壺":"あぶらつぼ","城ヶ島":"じょうがしま"
+      });
+      /* ===== 音読みフォールバック辞典（熟語の推測用・ひらがな） ===== */
+      var ON_EXTRA_STR = "悪あく,案あん,圧あつ,囲い,為い,胃い,椅い,違ちが,育いく,逸いつ,茨いばら,芋いも,印いん,因いん,院いん,飲いん,隠いん,影えい,営えい,栄えい,衛えい,易えき,益えき,液えき,駅えき,越えつ,円えん,延えん,沿えん,演えん,炎えん,煙えん,援えん,園えん,遠えん,鉛えん,塩えん,王おう,央おう,応おう,往おう,桜おう,押おう,横おう,欧おう,歌か,化か,荷か,科か,果か,家か,貨か,過か,蚊か,課か,靴か,革かく,核かく,格かく,確かく,角かく,覚かく,較かく,拡かく,閣かく,干かん,刊かん,汗かん,缶かん,完かん,肝かん,官かん,冠かん,看かん,陥かん,乾かん,勘かん,患かん,貫かん,換かん,敢かん,棺かん,款かん,間かん,閑かん,勧かん,寛かん,幹かん,感かん,漢かん,慣かん,管かん,関かん,歓かん,監かん,緩かん,憾かん,還かん,環かん,韓かん,艦かん,岩がん,顔がん,願がん,企き,伎き,危き,机き,気き,岐き,希き,忌き,汽き,紀き,祈き,季き,紀き,軌き,記き,起き,飢き,鬼き,帰き,基き,寄き,旗き,期き,棋き,棄き,機き,喜き,幾き,揮き,貴き,輝き,擬ぎ,欺ぎ,儀ぎ,戯ぎ,偽ぎ,議ぎ,犠ぎ,菊きく,吉きつ,喫きつ,詰きつ,脚きゃく,客きゃく,逆ぎゃく,丘きゅう,久きゅう,休きゅう,及きゅう,吸きゅう,宮きゅう,弓きゅう,急きゅう,救きゅう,求きゅう,泣きゅう,球きゅう,究きゅう,窮きゅう,級きゅう,糾きゅう,給きゅう,旧きゅう,牛ぎゅう,去きょ,巨きょ,拠きょ,挙きょ,虚きょ,許きょ,距きょ,漁ぎょ,享きょう,京きょう,供きょう,競きょう,共きょう,凶きょう,協きょう,叫きょう,峡きょう,強きょう,恐きょう,恭きょう,胸きょう,郷きょう,境きょう,橋きょう,矯きょう,響きょう,驚きょう,仰ぎょう,暁ぎょう,凝ぎょう,局きょく,曲きょく,極きょく,玉ぎょく,勤きん,均きん,禁きん,斤きん,筋きん,緊きん,謹きん,襟きん,近きん,金きん,銀ぎん,区く,苦く,駆く,具ぐ,愚ぐ,空くう,遇ぐう,隅ぐう,串くし,屈くつ,掘くつ,靴くつ,繰く,君くん,訓くん,勲くん,群ぐん,軍ぐん,郡ぐん,係けい,傾けい,刑けい,兄けい,啓けい,圭けい,形けい,契けい,恵けい,慶けい,径けい,茎けい,経けい,蛍けい,計けい,詣けい,警けい,軽けい,頸けい,鶏けい,鯨げい,迎げい,撃げき,劇げき,激げき,桁けた,欠けつ,穴けつ,血けつ,決けつ,結けつ,潔けつ,傑けつ,月げつ,件けん,券けん,剣けん,圏けん,堅けん,嫌けん,建けん,憲けん,懸けん,検けん,権けん,犬けん,献けん,研けん,絹けん,県けん,肩けん,見けん,鍵けん,軒けん,元げん,幻げん,弦げん,源げん,玄げん,現げん,限げん,原げん,厳げん,言げん,古こ,個こ,呼こ,固こ,姑こ,孤こ,己こ,庫こ,湖こ,雇こ,誇こ,鼓こ,顧こ,互ご,吾ご,娯ご,後ご,御ご,悟ご,語ご,誤ご,護ご,交こう,侯こう,倖こう,光こう,公こう,功こう,効こう,厚こう,口こう,向こう,后こう,喉こう,坑こう,好こう,孝こう,工こう,攻こう,更こう,校こう,構こう,江こう,洪こう,港こう,甲こう,皇こう,硬こう,稿こう,紅こう,絞こう,綱こう,考こう,肯こう,航こう,荒こう,講こう,貢こう,購こう,郊こう,酵こう,鉱こう,鋼こう,降こう,香こう,高こう,合ごう,拷ごう,剛ごう,豪ごう,克こく,刻こく,告こく,国こく,穀こく,酷こく,黒こく,骨こつ,込こ,困こん,婚こん,混こん,根こん,魂こん,墾こん,懇こん,痕こん,紺こん,左さ,差さ,査さ,砂さ,詐さ,鎖さ,座ざ,挫ざ,債さい,催さい,再さい,最さい,妻さい,宰さい,彩さい,才さい,採さい,栽さい,歳さい,済さい,災さい,砕さい,祭さい,細さい,裁さい,載さい,際さい,菜さい,坂さか,阪さか,堺さかい,酒さけ,作さく,策さく,昨さく,索さく,桜さくら,冊さつ,殺さつ,察さつ,撮さつ,擦さつ,刷さつ,札さつ,雑ざつ,皿さら,三さん,傘さん,山さん,惨さん,撒さん,散さん,桟さん,燦さん,産さん,算さん,纂さん,蚕さん,讃さん,酸さん,残ざん,斬ざん,暫ざん,士し,子し,市し,師し,志し,思し,指し,支し,施し,旨し,枝し,止し,死し,氏し,獅し,祉し,私し,糸し,紙し,紫し,肢し,脂し,至し,視し,詞し,詩し,試し,誌し,諮し,資し,飼し,誌し,雌し,爾じ,磁じ,示じ,字じ,寺じ,耳じ,自じ,辞じ,鹿じか,式しき,識しき,軸じく,七しち,質しつ,室しつ,湿しつ,漆しつ,疾しつ,執しつ,実じつ,芝しば,写しゃ,社しゃ,者しゃ,射しゃ,捨しゃ,赦しゃ,斜しゃ,遮しゃ,謝しゃ,邪じゃ,蛇じゃ,釈しゃく,爵しゃく,借しゃく,酌しゃく,尺しゃく,杓しゃく,灼しゃく,弱じゃく,若じゃく,寂じゃく,主しゅ,取しゅ,守しゅ,手しゅ,朱しゅ,殊しゅ,狩しゅ,珠しゅ,種しゅ,腫しゅ,趣しゅ,酒しゅ,首しゅ,儒じゅ,受じゅ,呪じゅ,寿じゅ,授じゅ,樹じゅ,綬じゅ,需じゅ,囚しゅう,周しゅう,宗しゅう,拾しゅう,秋しゅう,臭しゅう,修しゅう,袖しゅう,終しゅう,習しゅう,週しゅう,衆しゅう,集しゅう,愁しゅう,酬しゅう,醜しゅう,蹴しゅう,舟しゅう,輯しゅう,襲しゅう,十じゅう,汁じゅう,充じゅう,住じゅう,従じゅう,縦じゅう,重じゅう,銃じゅう,渋じゅう,柔じゅう,汁じゅう,戌じゅつ,術じゅつ,述じゅつ,俊しゅん,春しゅん,瞬しゅん,旬しゅん,巡じゅん,盾じゅん,純じゅん,巡じゅん,遵じゅん,醇じゅん,順じゅん,処しょ,初しょ,所しょ,暑しょ,庶しょ,緒しょ,署しょ,書しょ,諸しょ,女じょ,如じょ,助じょ,序じょ,叙じょ,徐じょ,除じょ,小しょう,将しょう,少しょう,昭しょう,宵しょう,庄しょう,尚しょう,承しょう,抄しょう,招しょう,昇しょう,昌しょう,晶しょう,松しょう,沼しょう,渉しょう,焼しょう,焦しょう,照しょう,症しょう,省しょう,硝しょう,礁しょう,祥しょう,称しょう,章しょう,笑しょう,粧しょう,紹しょう,肖しょう,衝しょう,訟しょう,詔しょう,詳しょう,象しょう,賞しょう,償しょう,障しょう,上じょう,丈じょう,乗じょう,冗じょう,剰じょう,城じょう,場じょう,壌じょう,嬢じょう,常じょう,情じょう,条じょう,杖じょう,浄じょう,状じょう,畳じょう,蒸じょう,譲じょう,醸じょう,錠じょう,色しょく,拭しょく,食しょく,植しょく,殖しょく,飾しょく,触しょく,嘱しょく,織しょく,職しょく,辱じょく,心しん,申じん,伸しん,侵しん,信しん,唇しん,娠しん,審しん,心しん,慎しん,振しん,新しん,晋しん,森しん,榛しん,浸しん,深しん,申じん,真しん,神しん,秦しん,紳しん,臣しん,芯しん,薪しん,親しん,診しん,辛しん,進しん,震しん,人じん,刃じん,仁じん,尽じん,迅じん,甚じん,陣じん,尋じん,腎じん";
+      var ON_EXTRA = {};
+      ON_EXTRA_STR.split(",").forEach(function(pair){ var idx=pair.lastIndexOf(""); var p=pair.trim(); if(!p) return; var ch=p.charAt(0); var rest=p.slice(1); var m=rest.match(/^(.+)$/); if(m) { /* format is Kanji+reading concatenated: first char is kanji, rest is reading */ ON_EXTRA[ch]=rest; } });
+      /* ===== 文章読み上げ・熟語推測のための補助 ===== */
+      function kataToHira(s){ return String(s||"").replace(/[ァ-ヶ]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); }); }
+      function kanjiOnHira(ch){
+        if(ON_EXTRA[ch]) return ON_EXTRA[ch];
+        if(KANJI[ch] && KANJI[ch].o) return kataToHira(KANJI[ch].o.split("・")[0].split("(")[0]);
+        return null;
+      }
+      function kanjiKunStem(ch){
+        if(KANJI[ch] && KANJI[ch].k){ var k=KANJI[ch].k.split("・")[0]; var stem=k.replace(/\(.*\)$/,""); return stem; }
+        return null;
+      }
+      function kanjiKunFull(ch){
+        if(KANJI[ch] && KANJI[ch].k){ var k=KANJI[ch].k.split("・")[0]; var m=k.match(/^(.+?)\((.+?)\)$/); if(m) return m[1]+m[2]; return k; }
+        return null;
+      }
+      /* 音便（促音化）の簡易適用 */
+      function applySokuon(readings){
+        var out=[];
+        for(var i=0;i<readings.length;i++){ var r=readings[i];
+          if(i>0 && out.length){ var prev=out[out.length-1];
+            if(/(く|つ|ち|き)$/.test(prev) && /^[かさたぱは]/.test(r)){ out[out.length-1]=prev.replace(/(く|つ|ち|き)$/,"っ"); }
+            else if(/く$/.test(prev) && /^こ/.test(r)){ out[out.length-1]=prev.replace(/く$/,"っ"); }
+          }
+          out.push(r);
+        }
+        return out.join("");
+      }
+      /* 数字の読み */
+      var NUM_ONES=["","いち","に","さん","よん","ご","ろく","なな","はち","きゅう"];
+      var NUM_SMALL=["","じゅう","ひゃく","せん"];
+      function readNumberBelow10000(n){
+        if(n===0) return "ぜろ"; var s=""; var digits=String(n).split("").map(Number); var len=digits.length;
+        for(var i=0;i<len;i++){ var d=digits[i]; var pos=len-1-i; if(d===0) continue; if(pos===0){ s+=NUM_ONES[d]; } else if(pos===1){ s+=(d===1?"じゅう":NUM_ONES[d]+"じゅう"); } else if(pos===2){ if(d===1) s+="ひゃく"; else if(d===3) s+="さんびゃく"; else if(d===6) s+="ろっぴゃく"; else if(d===8) s+="はっぴゃく"; else s+=NUM_ONES[d]+"ひゃく"; } else if(pos===3){ if(d===1) s+="いっせん"; else if(d===3) s+="さんぜん"; else if(d===8) s+="はっせん"; else s+=NUM_ONES[d]+"せん"; } }
+        return s;
+      }
+      function readNumberString(ds){
+        var n=parseInt(ds,10); if(isNaN(n)) return null; if(n===0) return "ぜろ";
+        if(n<10000) return readNumberBelow10000(n);
+        if(n<100000000){ var man=Math.floor(n/10000); var rest=n%10000; var s=readNumberBelow10000(man)+"まん"; if(rest) s+=readNumberBelow10000(rest); return s; }
+        return ds.split("").map(function(d){ return NUM_ONES[Number(d)]||"ぜろ"; }).join(" ");
+      }
+      /* 単語の読み推測：辞書最長一致→音読み合成→訓読み合成 */
+      function guessWordReading(word){
+        if(!word) return null;
+        if(WORD_READINGS[word]) return {reading:WORD_READINGS[word], how:"辞書"};
+        if(READINGS[word]) return {reading:READINGS[word], how:"辞書"};
+        /* 数字だけ */
+        if(/^[0-9０-９]+$/.test(word)){ var nr=readNumberString(normalizeDigits(word)); if(nr) return {reading:nr, how:"数字"}; }
+        /* 数字＋単位の混在は数字部分だけ変換して残す */
+        /* 最長一致で分割 */
+        var dictAll={}; Object.keys(WORD_READINGS).forEach(function(k){dictAll[k]=WORD_READINGS[k];}); Object.keys(READINGS).forEach(function(k){dictAll[k]=READINGS[k];});
+        var pos=0, parts=[], okAll=true;
+        while(pos<word.length){
+          var matched=null, matchedR=null;
+          for(var L=Math.min(5, word.length-pos); L>=2; L--){ var sub=word.substr(pos,L); if(dictAll[sub]){ matched=sub; matchedR=dictAll[sub]; break; } }
+          if(matched){ parts.push(matchedR); pos+=matched.length; }
+          else { okAll=false; break; }
+        }
+        if(okAll && parts.length>=2) return {reading:parts.join(""), how:"辞書の組み合わせ"};
+        /* 々 の処理 */
+        var expanded=""; for(var ei=0;ei<word.length;ei++){ if(word[ei]==="々" && ei>0) expanded+=word[ei-1]; else expanded+=word[ei]; }
+        /* 漢字＋ひらがな混在（送り仮名）：訓読みで試す */
+        var hasKana=/[ぁ-ん]/.test(expanded), hasKanji=/[一-龯]/.test(expanded);
+        if(hasKana && hasKanji){
+          var res="", i2=0, kunOk=true;
+          while(i2<expanded.length){ var c2=expanded[i2];
+            if(/[一-龯]/.test(c2)){
+              /* 後ろのひらがなを集める */
+              var kana=""; var j=i2+1; while(j<expanded.length && /[ぁ-ん]/.test(expanded[j])){ kana+=expanded[j]; j++; }
+              var full=kanjiKunFull(c2), stem=kanjiKunStem(c2);
+              if(full && kana && full.slice(-kana.length)===kana){ res+=full; i2=j; }
+              else if(stem){ res+=stem+(kana||""); i2=j; }
+              else { var on=kanjiOnHira(c2); if(on){ res+=on+(kana||""); i2=j; } else { kunOk=false; break; } }
+            } else { res+=c2; i2++; }
+          }
+          if(kunOk && res) return {reading:res, how:"訓読みからの推測"};
+        }
+        /* 全て漢字：音読み合成 */
+        if(/^[一-龯]+$/.test(expanded)){
+          var ons=[], allOn=true;
+          for(var oi=0;oi<expanded.length;oi++){ var onr=kanjiOnHira(expanded[oi]); if(!onr){ allOn=false; break; } ons.push(onr); }
+          if(allOn) return {reading:applySokuon(ons), how:"音読みからの推測"};
+          /* 一部だけ分かる場合：分かる所だけでも返す */
+          var partial=[], any=false;
+          for(var pi=0;pi<expanded.length;pi++){ var pr=kanjiOnHira(expanded[pi])||kanjiKunStem(expanded[pi]); if(pr){ partial.push(pr); any=true; } else partial.push("？"); }
+          if(any) return {reading:partial.join(""), how:"一部の漢字からの推測"};
+        }
+        /* カタカナ・ひらがなだけの語はそのまま（ひらがな化） */
+        if(/^[ァ-ヶー]+$/.test(word)) return {reading:kataToHira(word), how:"カタカナ"};
+        if(/^[ぁ-んー]+$/.test(word)) return {reading:word, how:"ひらがな"};
+        return null;
+      }
+      /* 文全体を読む：漢字部分に読みを付ける */
+      function readSentenceReading(sentence){
+        var dictAll={}; Object.keys(WORD_READINGS).forEach(function(k){ if(k.length>=2) dictAll[k]=WORD_READINGS[k]; }); Object.keys(READINGS).forEach(function(k){ if(k.length>=2) dictAll[k]=READINGS[k]; });
+        var out="", i=0;
+        while(i<sentence.length){
+          /* 数字列 */
+          if(/[0-9０-９]/.test(sentence[i])){ var ds=""; while(i<sentence.length && /[0-9０-９]/.test(sentence[i])){ ds+=sentence[i]; i++; } var nr=readNumberString(normalizeDigits(ds)); out+=(nr||ds); continue; }
+          var matched=null, mr=null;
+          for(var L=Math.min(5, sentence.length-i); L>=2; L--){ var sub=sentence.substr(i,L); if(dictAll[sub]){ matched=sub; mr=dictAll[sub]; break; } }
+          if(matched){ out+=mr; i+=matched.length; continue; }
+          var ch=sentence[i];
+          if(/[一-龯々]/.test(ch)){
+            var realCh=(ch==="々" && i>0)? sentence[i-1] : ch;
+            /* 次がひらがななら訓読み優先 */
+            var next=sentence[i+1]||"";
+            var g=guessWordReading(ch);
+            var kunF=kanjiKunFull(realCh), kunS=kanjiKunStem(realCh);
+            if(/[ぁ-ん]/.test(next) && kunF){ out+=kunF; /* 送り仮名は次のループでそのまま出るので、重なる分を調整 */ var okuri= kunF.slice(kunS?kunS.length:0); /* 次の文字が送り仮名の先頭と一致したら送り仮名分を読みに含め、入力側は送り仮名を読み終わった分スキップしない（下で通常出力されるため二重になるのを防ぐ） */
+              /* kunF には送り仮名が含まれる。後続のひらがなはそのまま出てしまうと二重になるので、送り仮名の長さだけ入力を進める代わりに読みは stem のみにする */
+              out=out.slice(0, out.length - kunF.length) + (kunS||kunF);
+            } else if(kunS && (!sentence[i-1] || !/[一-龯]/.test(sentence[i-1])) && (!next || !/[一-龯]/.test(next))){ out+=kunF||kunS; }
+            else { var on2=kanjiOnHira(realCh); out+=(on2||kunS||ch); }
+            i++; continue;
+          }
+          if(/[ァ-ヶ]/.test(ch)){ out+=kataToHira(ch); i++; continue; }
+          if(/[。、！？・「」『』（）\s]/.test(ch)){ out+=(ch==="。"?"。": ch==="、"?"、": ch); i++; continue; }
+          out+=ch; i++;
+        }
+        return out.replace(/\s+/g," ").trim();
+      }
+      /* 言葉の意味（簡易辞典） */
+      var DEFINITIONS = {
+        "人工知能":"人間の知的な働きをコンピューターで再現しようとする技術のことです。AIとも呼ばれます。",
+        "相対性理論":"アインシュタインが発表した、時間と空間の関係についての物理学の理論です。",
+        "光合成":"植物が太陽の光を使って、水と二酸化炭素から栄養（デンプン）と酸素を作る働きのことです。",
+        "重力":"物と物が引き合う力のことです。地球上では、物が下に落ちる原因になっています。",
+        "地球温暖化":"二酸化炭素などの温室効果ガスが増えて、地球全体の平均気温が上がっていく現象のことです。",
+        "ブラックホール":"非常に強い重力を持ち、光さえも外に出られない天体のことです。",
+        "インフレーション":"物価が上がり続ける現象のことです。経済の文脈では「インフレ」と略されます。",
+        "プログラミング":"コンピューターにやらせたい処理を、専用の言語で順序立てて書くことです。",
+        "アルゴリズム":"問題を解くための手順や計算方法のことです。",
+        "メタバース":"インターネット上に作られた仮想空間のことです。アバターで交流したり遊んだりできます。",
+        "サブスクリプション":"定額料金を払って、一定期間サービスを使える仕組みのことです。「サブスク」と略されます。",
+        "推し活":"好きなアイドルやキャラクターなどを応援する活動のことです。",
+        "エモい":"心が動かされて、なんとも言えない気持ちになる様子を表す若者言葉です。",
+        "蛙化現象":"好きだった相手の言動で、気持ちが冷めてしまう現象を指す言葉として使われています。",
+        "リスキリング":"新しい仕事やスキルに対応するために、学び直すことです。",
+        "カーボンニュートラル":"二酸化炭素の排出量と吸収量を差し引きゼロにすることです。",
+        "半導体":"電気を通しやすい材料と通しにくい材料の中間の性質を持つ物質で、スマホやパソコンの頭脳に使われます。",
+        "量子コンピューター":"量子力学の仕組みを使って計算する、次世代のコンピューターです。",
+        "生成AI":"文章や画像などを新しく作り出すAIのことです。",
+        "著作権":"小説や音楽、絵などの作品を作った人が持つ権利のことです。",
+        "ふるさと納税":"応援したい自治体に寄付をすると、税金が控除され、返礼品がもらえる仕組みです。",
+        "マイナンバー":"日本に住民票がある人全員に割り当てられる12桁の番号です。",
+        "円安":"外国の通貨に対して円の価値が下がることです。輸入品が値上がりしやすくなります。",
+        "円高":"外国の通貨に対して円の価値が上がることです。",
+        "株価":"株式1株あたりの値段のことです。",
+        "地震":"地面が揺れる現象です。地下の岩盤がずれることで起こります。",
+        "津波":"地震などで海底が大きく動いたときに発生する、大きな波のことです。",
+        "台風":"熱帯の海上で発達した低気圧のうち、最大風速が一定以上になったものです。",
+        "オーロラ":"太陽から来た粒子が大気とぶつかって光る現象です。北極や南極の近くでよく見られます。",
+        "流星群":"たくさんの流れ星が一時期に集中して見える現象です。",
+        "月食":"地球の影に月が入って、月が欠けて見える現象です。",
+        "日食":"月が太陽を隠して、太陽が欠けて見える現象です。",
+        "干支":"子・丑・寅など12種類の動物で年を表す仕組みです。",
+        "うるう年":"2月が29日まである年のことです。4年に1度巡ってきます。",
+        "夏休み":"学校が夏に取る長い休みのことです。",
+        "卒業式":"学校を卒業する人を祝う式典です。",
+        "入学式":"学校に入学する人を迎える式典です。"
+      };
+      var ENGLISH_WORDS = {
+        "りんご":"apple","犬":"dog","猫":"cat","鳥":"bird","魚":"fish","馬":"horse","牛":"cow","豚":"pig","羊":"sheep","兎":"rabbit",
+        "水":"water","火":"fire","木":"tree","金":"gold / money","土":"earth / soil","山":"mountain","川":"river","海":"sea","空":"sky","雨":"rain","雪":"snow","雲":"cloud","風":"wind","星":"star","月":"moon","太陽":"sun","地球":"Earth",
+        "学校":"school","先生":"teacher","生徒":"student","友達":"friend","家族":"family","家":"house","車":"car","電車":"train","飛行機":"airplane","自転車":"bicycle",
+        "本":"book","紙":"paper","ペン":"pen","机":"desk","椅子":"chair","時計":"clock / watch","電話":"telephone","写真":"photo / picture",
+        "食べ物":"food","飲み物":"drink","朝ごはん":"breakfast","昼ごはん":"lunch","晩ごはん":"dinner","美味しい":"delicious",
+        "嬉しい":"happy","悲しい":"sad","楽しい":"fun","忙しい":"busy","大きい":"big","小さい":"small","新しい":"new","古い":"old","高い":"tall / expensive","安い":"cheap",
+        "今日":"today","明日":"tomorrow","昨日":"yesterday","今":"now","ここ":"here","そこ":"there","誰":"who","何":"what","なぜ":"why","いつ":"when","どこ":"where",
+        "ありがとう":"thank you","こんにちは":"hello","さようなら":"goodbye","おはよう":"good morning","おやすみ":"good night",
+        "日本":"Japan","日本語":"Japanese","英語":"English","東京":"Tokyo","日本人":"Japanese person"
+      };
+      /* facts: re / label / value / render(value)->sentence */
+      var FACTS = [
+        { re: /富士山の?(高さ|標高)|富士山は何メートル/, label: "富士山の高さ", value: "標高3,776メートル", render: function(v){ return "富士山の高さは" + v + "です。"; } },
+        { re: /日本で一番高い山|日本一高い山/, label: "日本で一番高い山", value: "富士山", render: function(v){ return "日本で一番高い山は" + v + "です。"; } },
+        { re: /世界で一番高い山|世界一高い山/, label: "世界で一番高い山", value: "エベレスト", render: function(v){ return "世界で一番高い山は" + v + "です。"; } },
+        { re: /エベレストの?(高さ|標高)/, label: "エベレストの高さ", value: "標高8,849メートル", render: function(v){ return "エベレストの高さは" + v + "です。"; } },
+        { re: /月までの距離|月はどのくらい離れて/, label: "月までの距離", value: "約38万km", render: function(v){ return "地球から月までの距離は" + v + "です。"; } },
+        { re: /光の速さ|光速/, label: "光の速さ", value: "秒速約30万km", render: function(v){ return "光の速さは" + v + "です。"; } },
+        { re: /(1|１|一)年は何日/, label: "1年の日数", value: "365日", render: function(v){ return "1年は" + v + "です。"; } },
+        { re: /水の化学式/, label: "水の化学式", value: "H₂O", render: function(v){ return "水の化学式は " + v + " です。"; } },
+        { re: /スカイツリーの?高さ/, label: "東京スカイツリーの高さ", value: "634メートル", render: function(v){ return "東京スカイツリーの高さは" + v + "です。"; } },
+        { re: /東京タワーの?高さ/, label: "東京タワーの高さ", value: "333メートル", render: function(v){ return "東京タワーの高さは" + v + "です。"; } },
+        { re: /都道府県(の数|は全部で|はいくつ)/, label: "都道府県の数", value: "47", render: function(v){ return "日本の都道府県は全部で " + v + " 都道府県です。"; } },
+        { re: /世界で一番大きい国|世界一大きい国/, label: "世界で一番大きい国", value: "ロシア", render: function(v){ return "世界で一番大きい国は" + v + "です。"; } },
+        { re: /世界で一番人口が多い国|人口が一番多い国/, label: "世界で一番人口が多い国", value: "インド", render: function(v){ return "世界で一番人口が多い国は" + v + "です。"; } },
+        { re: /日本で一番長い川|日本一長い川/, label: "日本で一番長い川", value: "信濃川", render: function(v){ return "日本で一番長い川は" + v + "です。"; } },
+        { re: /日本で一番大きい湖|日本一大きい湖/, label: "日本で一番大きい湖", value: "琵琶湖", render: function(v){ return "日本で一番大きい湖は" + v + "です。"; } },
+        { re: /日本の人口/, label: "日本の人口", value: "約1億2,300万人", render: function(v){ return "日本の人口は" + v + "です。"; } },
+        { re: /円周率/, label: "円周率", value: "約3.14159", render: function(v){ return "円周率は" + v + "です。"; } },
+        { re: /クリスマスは(何月何日|いつ)/, label: "クリスマス", value: "12月25日", render: function(v){ return "クリスマスは" + v + "です。"; } },
+        { re: /オリンピックは何年ごと/, label: "オリンピックの周期", value: "4年", render: function(v){ return "オリンピックは" + v + "ごとに開催されます。"; } },
+        { re: /サッカーの?(試合時間|試合の長さ)/, label: "サッカーの試合時間", value: "90分", render: function(v){ return "サッカーの試合時間は前後半合わせて" + v + "です。"; } },
+        { re: /陸上で一番速い動物|一番速い動物/, label: "一番速い動物", value: "チーター", render: function(v){ return "陸上で一番速い動物は" + v + "です。"; } },
+        { re: /パンダ(の|が)(主食|食べ物|食べるもの)/, label: "パンダの主食", value: "笹や竹", render: function(v){ return "パンダは主に" + v + "を食べます。"; } },
+        { re: /(1|１|一)週間は何日/, label: "1週間の日数", value: "7日", render: function(v){ return "1週間は" + v + "です。"; } },
+        { re: /地球の直径/, label: "地球の直径", value: "約12,742km", render: function(v){ return "地球の直径は" + v + "です。"; } },
+        { re: /太陽までの距離/, label: "太陽までの距離", value: "約1億5,000万km", render: function(v){ return "地球から太陽までの距離は" + v + "です。"; } },
+        { re: /日本の国歌|国歌は何|国歌の名前/, label: "日本の国歌", value: "君が代", render: function(v){ return "日本の国歌は「" + v + "」です。"; } },
+        { re: /日本の国鳥|国鳥は何/, label: "日本の国鳥", value: "キジ", render: function(v){ return "日本の国鳥は" + v + "です。"; } },
+        { re: /日本の国花|国花は何/, label: "日本の国花", value: "桜と菊", render: function(v){ return "日本の国花は" + v + "です。"; } },
+        { re: /日本の通貨|日本の?お金(の単位|は)/, label: "日本の通貨", value: "円", render: function(v){ return "日本の通貨は「" + v + "」です。"; } },
+        { re: /一番大きい惑星|最大の惑星/, label: "一番大きい惑星", value: "木星", render: function(v){ return "太陽系で一番大きい惑星は" + v + "です。"; } },
+        { re: /一番小さい惑星|最小の惑星/, label: "一番小さい惑星", value: "水星", render: function(v){ return "太陽系で一番小さい惑星は" + v + "です。"; } },
+        { re: /太陽系の惑星(の数|はいくつ|は何個)/, label: "太陽系の惑星の数", value: "8つ", render: function(v){ return "太陽系の惑星は" + v + "です。"; } },
+        { re: /人間の骨の数|骨は全部で何本|骨の数/, label: "人間の骨の数", value: "約206本", render: function(v){ return "大人の人間の骨は全部で" + v + "あります。"; } },
+        { re: /人間の歯の数|永久歯(の数|は何本)/, label: "人間の歯の数", value: "32本", render: function(v){ return "大人の永久歯は全部で" + v + "です。"; } },
+        { re: /一番大きい動物|最大の動物/, label: "一番大きい動物", value: "シロナガスクジラ", render: function(v){ return "世界で一番大きい動物は" + v + "です。"; } },
+        { re: /世界で一番長い川|世界一長い川/, label: "世界で一番長い川", value: "ナイル川", render: function(v){ return "世界で一番長い川は" + v + "です。"; } },
+        { re: /世界で一番大きい砂漠|最大の砂漠/, label: "世界で一番大きい砂漠", value: "サハラ砂漠", render: function(v){ return "世界で一番大きい砂漠は" + v + "です。"; } },
+        { re: /一番深い(海溝|場所|海)/, label: "一番深い海溝", value: "マリアナ海溝", render: function(v){ return "世界で一番深い海溝は" + v + "です。"; } },
+        { re: /世界で一番高い建物|世界一高い建物|一番高いビル/, label: "世界で一番高い建物", value: "ブルジュ・ハリファ", render: function(v){ return "世界で一番高い建物はドバイの" + v + "です。"; } },
+        { re: /日本の面積/, label: "日本の面積", value: "約38万平方キロメートル", render: function(v){ return "日本の面積は" + v + "です。"; } },
+        { re: /日本で一番大きい(都道府県|県)|一番大きい都道府県/, label: "日本で一番大きい都道府県", value: "北海道", render: function(v){ return "日本で一番大きい都道府県は" + v + "です。"; } },
+        { re: /日本で一番小さい(県|都道府県)|一番小さい県/, label: "日本で一番小さい県", value: "香川県", render: function(v){ return "日本で一番小さい県は" + v + "です。"; } },
+        { re: /日本で一番深い湖|日本一深い湖/, label: "日本で一番深い湖", value: "田沢湖", render: function(v){ return "日本で一番深い湖は秋田県の" + v + "です。"; } },
+        { re: /東京の人口/, label: "東京の人口", value: "約1,400万人", render: function(v){ return "東京都の人口は" + v + "です。"; } },
+        { re: /地球の(円周|周りの長さ|一周の長さ)/, label: "地球の円周", value: "約4万km", render: function(v){ return "地球の円周は" + v + "です。"; } },
+        { re: /音の速さ|音速/, label: "音の速さ", value: "秒速約340メートル", render: function(v){ return "音の速さは空気中で" + v + "です。"; } },
+        { re: /水の沸点|水は何度で沸騰/, label: "水の沸点", value: "100度", render: function(v){ return "水の沸点は" + v + "です。"; } },
+        { re: /富士山が世界遺産(になった|に登録された)(年|のはいつ)/, label: "富士山の世界遺産登録年", value: "2013年", render: function(v){ return "富士山が世界文化遺産に登録されたのは" + v + "です。"; } },
+        { re: /一万円札の(人|人物|顔)/, label: "一万円札の人物", value: "渋沢栄一", render: function(v){ return "現在の一万円札に描かれているのは" + v + "です。"; } },
+        { re: /五千円札の(人|人物|顔)/, label: "五千円札の人物", value: "津田梅子", render: function(v){ return "現在の五千円札に描かれているのは" + v + "です。"; } },
+        { re: /千円札の(人|人物|顔)/, label: "千円札の人物", value: "北里柴三郎", render: function(v){ return "現在の千円札に描かれているのは" + v + "です。"; } },
+        { re: /ワールドカップは何年ごと|W杯は何年ごと/, label: "ワールドカップの周期", value: "4年", render: function(v){ return "サッカーワールドカップは" + v + "ごとに開催されます。"; } },
+        { re: /野球は(何回まで|何イニング)/, label: "野球のイニング", value: "9回", render: function(v){ return "野球の試合は通常" + v + "までです。"; } },
+        { re: /虹の色(の数|は何色|はいくつ)/, label: "虹の色の数", value: "7色", render: function(v){ return "虹の色は" + v + "と言われています。"; } },
+        { re: /ピアノの鍵盤(の数|はいくつ|は何鍵)/, label: "ピアノの鍵盤の数", value: "88鍵", render: function(v){ return "ピアノの鍵盤は" + v + "です。"; } },
+        { re: /オリンピックの(輪|リング)の数/, label: "オリンピックの輪の数", value: "5つ", render: function(v){ return "オリンピックシンボルの輪は" + v + "です。"; } },
+        { re: /干支(の数|はいくつ)|十二支の数/, label: "干支の数", value: "12", render: function(v){ return "干支（十二支）は全部で " + v + " 種類です。"; } }
+      ];
+      var TRIVIA = [
+        "タコの心臓は3つあります。2つはエラ用、1つは全身用です。",
+        "ハチミツは密閉されていれば腐らないと言われていて、古代エジプトの墓から見つかったハチミツも食べられる状態だったそうです。",
+        "バナナは植物学的にはベリー（液果）の一種に分類されます。",
+        "キリンの首の骨の数は、人間と同じ7つです。",
+        "月は毎年約3.8cmずつ地球から遠ざかっています。",
+        "サメには骨がなく、体はすべて軟骨でできています。",
+        "人間の体は、体重の約60%が水でできています。"
+      ];
+
+      /* ================= state ================= */
+      var conversations = [];
+      var current = null;
+      var streamTimer = null;
+
+      function newConversation() {
+        return {
+          id: "c" + Date.now() + Math.floor(Math.random() * 10000),
+          title: null,
+          messages: [], /* {role:'user'|'ai', text, img} */
+          memory: { overrides: {}, facts: {} }, /* overrides: key -> {label, value, text} */
+          lastQ: null, /* {key, sig, label, render} */
+          awaiting: false
+        };
+      }
+      function mem() { return current.memory; }
+
+      /* ================= helpers ================= */
+      function $(s) { return document.querySelector(s); }
+      function esc(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      }
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function normalizeDigits(s) {
+        return s.replace(/[０-９]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - 0xFEE0); });
+      }
+      function makeSig(text) {
+        return text.replace(/[\s　？?。！!、,]/g, "").replace(/(を教えて|教えてください|教えて|ください)$/, "");
+      }
+      function sentenceFromValue(v) {
+        v = String(v).trim();
+        if (/[。！？]$/.test(v)) return v;
+        if (/(です|ます|だ|である|います|あります)$/.test(v)) return v + "。";
+        return v + "です。";
+      }
+      function stripFinalParticles(s) {
+        var c = String(s).trim();
+        c = c.replace(/^[「『"“]/, "").replace(/[」』"”]$/, "");
+        var re = /(だよ|ですよ|なんだよ|なんですよ|なんだ|なんです|だって|です|だ|である|よ|ね)[。！!]?$/;
+        var guard = 0;
+        while (re.test(c) && guard < 4) { c = c.replace(re, ""); guard++; }
+        c = c.replace(/[。！!]$/, "").trim();
+        c = c.replace(/^[「『"“]/, "").replace(/[」』"”]$/, "");
+        return c;
+      }
+
+      /* ================= brain ================= */
+      function setOverride(key, label, value, text) {
+        mem().overrides[key] = { label: label, value: value, text: text };
+      }
+      function applyOverrideToLastQ(value) {
+        var lq = current.lastQ;
+        if (!lq) return null;
+        var text = lq.render(value);
+        if (lq.key) setOverride(lq.key, lq.label, value, text);
+        setOverride("sig:" + lq.sig, lq.label, value, text);
+        return text;
+      }
+      function linkSubjectToTopic(subject, value) {
+        /* returns rendered sentence if subject maps to a known topic, else null */
+        var m = subject.match(/^(.+?)の読み方$/);
+        if (m) {
+          var place = m[1];
+          var t = place + "の読み方は「" + value + "」です。";
+          setOverride("reading:" + place, place + "の読み方", value, t);
+          return t;
+        }
+        m = subject.match(/^(.+?)の首都$/);
+        if (m) {
+          var country = m[1];
+          var t2 = country + "の首都は" + value + "です。";
+          setOverride("capital:" + country, country + "の首都", value, t2);
+          return t2;
+        }
+        for (var i = 0; i < FACTS.length; i++) {
+          if (FACTS[i].label === subject) {
+            var t3 = FACTS[i].render(value);
+            setOverride("fact:" + FACTS[i].label, FACTS[i].label, value, t3);
+            return t3;
+          }
+        }
+        return null;
+      }
+      function learnFact(subject, value) {
+        mem().facts[subject] = value;
+        linkSubjectToTopic(subject, value);
+      }
+
+      /* parse a claim: returns {kind:'reading'|'fact'|'value', subject, value} */
+      function parseClaim(raw) {
+        var t = String(raw).trim();
+        var j = t.split(/じゃなくて|ではなくて|じゃなく|ではなく/);
+        if (j.length > 1) t = j[j.length - 1].trim();
+        t = t.replace(/^(正しくは|本当は|ほんとは|正解は)[、,\s]*/, "");
+        var m = t.match(/^(.+?)の読み方は[「『]?(.+?)[」』]?$/);
+        if (m) return { kind: "reading", subject: m[1].trim(), value: stripFinalParticles(m[2]) };
+        m = t.match(/^(.+?)は[「『]?(.+?)[」』]?(って|と)読(む|みます)/);
+        if (m) return { kind: "reading", subject: m[1].trim(), value: stripFinalParticles(m[2]) };
+        m = t.match(/^(.+?)は[「『]?(.+?)[」』]?$/);
+        if (m) return { kind: "fact", subject: m[1].trim(), value: stripFinalParticles(m[2]) };
+        return { kind: "value", subject: null, value: stripFinalParticles(t) };
+      }
+
+      function handleClaim(claim, isCorrection) {
+        var ack = isCorrection
+          ? pick(["あ、すみません！ご指摘ありがとうございます。", "そうだったんですね！教えてくれてありがとうございます。", "ごめんなさい、間違えました！教えてくれてありがとうございます。"])
+          : pick(["そうなんですね！", "なるほど、そうなんですね！", "へえ、そうなんですね！"]);
+        var tail = pick(["しっかり覚えました！", "もう忘れません。次からはその通りに答えますね。", "覚えました！次からはその通りに答えます。"]);
+        if (claim.kind === "reading") {
+          var t = claim.subject + "の読み方は「" + claim.value + "」です。";
+          setOverride("reading:" + claim.subject, claim.subject + "の読み方", claim.value, t);
+          if (current.lastQ && current.lastQ.key === "reading:" + claim.subject) applyOverrideToLastQ(claim.value);
+          return ack + t + tail;
+        }
+        if (claim.kind === "fact") {
+          learnFact(claim.subject, claim.value);
+          var linked = linkSubjectToTopic(claim.subject, claim.value);
+          if (current.lastQ && current.lastQ.label === claim.subject) applyOverrideToLastQ(claim.value);
+          var sentence = linked || (claim.subject + "は" + claim.value + "です。");
+          return ack + sentence + tail;
+        }
+        /* bare value */
+        if (current.lastQ) {
+          var text = applyOverrideToLastQ(claim.value);
+          return ack + text + tail;
+        }
+        return ack + "「" + claim.value + "」ですね。" + tail;
+      }
+
+      function isQuestionLike(t) {
+        return /[？?]\s*$/.test(t) || /(ですか|ますか|でしょうか|かな)[？?。]?\s*$/.test(t) ||
+          /(何|なに|なん|どこ|誰|だれ|いつ|どう|なぜ|なんで|いくつ|いくら|どれ|どの)/.test(t) && /[？?]/.test(t) ||
+          /(教えて|とは|って何|ってなに)/.test(t) ||
+          /(読んで|ふりがな|フリガナ|ルビ|英語で|意味は|意味って)/.test(t) && !/(だよ|です。|だ。|である)/.test(t) ||
+          /(どう読む|なんて読む|何て読む|何と読む|読み方)/.test(t) && !/(だよ|です。|だ。|である)/.test(t);
+      }
+
+      function tryMath(raw) {
+        var t = normalizeDigits(raw)
+          .replace(/たす|足す/g, "+").replace(/ひく|引く/g, "-")
+          .replace(/かける|掛ける/g, "*").replace(/わる|割る/g, "/")
+          .replace(/[×✕✖]/g, "*").replace(/÷/g, "/").replace(/＋/g, "+").replace(/－|−/g, "-")
+          .replace(/イコール|は$/g, "");
+        var m = t.match(/\(?-?\d[\d+\-*/(). ]*\d\)?|\(?-?\d+\.?\d*\)?/);
+        if (!m) return null;
+        var expr = m[0].replace(/\s+/g, "");
+        if (!/[+\-*/]/.test(expr.replace(/^-/, ""))) return null;
+        if (!/^[-+*/().\d]+$/.test(expr)) return null;
+        var val = evalExpr(expr);
+        if (val === null) return { error: true, expr: expr };
+        return { expr: expr, value: val };
+      }
+      function evalExpr(expr) {
+        /* shunting-yard */
+        var prec = { "+": 1, "-": 1, "*": 2, "/": 2 };
+        var out = [], ops = [], i = 0, tokens = [];
+        while (i < expr.length) {
+          var ch = expr[i];
+          if (/[0-9.]/.test(ch)) {
+            var num = "";
+            while (i < expr.length && /[0-9.]/.test(expr[i])) num += expr[i++];
+            tokens.push(parseFloat(num));
+            continue;
+          }
+          if (ch === "-" && (tokens.length === 0 || typeof tokens[tokens.length - 1] === "string")) {
+            var n2 = "-";
+            i++;
+            while (i < expr.length && /[0-9.]/.test(expr[i])) n2 += expr[i++];
+            if (n2 === "-") return null;
+            tokens.push(parseFloat(n2));
+            continue;
+          }
+          tokens.push(ch); i++;
+        }
+        for (var k = 0; k < tokens.length; k++) {
+          var tk = tokens[k];
+          if (typeof tk === "number") out.push(tk);
+          else if (tk === "(") ops.push(tk);
+          else if (tk === ")") {
+            while (ops.length && ops[ops.length - 1] !== "(") out.push(ops.pop());
+            if (!ops.length) return null;
+            ops.pop();
+          } else if (prec[tk]) {
+            while (ops.length && prec[ops[ops.length - 1]] >= prec[tk]) out.push(ops.pop());
+            ops.push(tk);
+          } else return null;
+        }
+        while (ops.length) {
+          var op = ops.pop();
+          if (op === "(") return null;
+          out.push(op);
+        }
+        var stack = [];
+        for (var q = 0; q < out.length; q++) {
+          var v = out[q];
+          if (typeof v === "number") stack.push(v);
+          else {
+            var b = stack.pop(), a = stack.pop();
+            if (a === undefined || b === undefined) return null;
+            if (v === "+") stack.push(a + b);
+            else if (v === "-") stack.push(a - b);
+            else if (v === "*") stack.push(a * b);
+            else if (v === "/") { if (b === 0) return "div0"; stack.push(a / b); }
+          }
+        }
+        if (stack.length !== 1) return null;
+        return stack[0];
+      }
+      function fmtNum(n) {
+        if (typeof n !== "number" || !isFinite(n)) return String(n);
+        var r = Math.round(n * 1000000) / 1000000;
+        return String(r);
+      }
+
+      function deflect(place) {
+        return "ごめんなさい、「" + place + "」についてはまだ知りません。知っていたらぜひ教えてください。そのまま覚えて、次からはその通りに答えます！";
+      }
+
+      function answerQuestion(raw) {
+        var t = raw.trim();
+        var sig = makeSig(t);
+        var ov = mem().overrides["sig:" + sig];
+        if (ov) {
+          current.lastQ = { key: "sig:" + sig, sig: sig, label: ov.label, render: function(v) { return sentenceFromValue(v); } };
+          return ov.text;
+        }
+        var clean = t.replace(/(を教えてください|を教えて|教えてください|教えて|について教えて|って何|とは何|とは)[？?。]?\s*$/, "").trim();
+
+        function cleanTarget(s) {
+          return String(s || "").replace(/^[「『"“【]/, "").replace(/[」』"”】]$/, "")
+            .replace(/^(この漢字|この言葉|この単語|漢字|言葉)[「『"“]?/, "")
+            .replace(/[」』"”】]$/, "")
+            .replace(/(の|は|って|を)$/, "").trim()
+            .replace(/^[「『"“]/, "").replace(/[」』"”]$/, "").trim();
+        }
+        function answerReading(place, sig2) {
+          var key = "reading:" + place;
+          var renderR = (function(p) { return function(v) { return p + "の読み方は「" + v + "」です。"; }; })(place);
+          current.lastQ = { key: key, sig: sig2, label: place + "の読み方", render: renderR };
+          var rov = mem().overrides[key];
+          if (rov) return rov.text;
+          if (READINGS[place]) return renderR(READINGS[place]);
+          if (WORD_READINGS[place]) return renderR(WORD_READINGS[place]);
+          if (place.length === 1 && /[一-龯]/.test(place)) {
+            var kj = KANJI[place], kparts = [];
+            if (kj && kj.o) kparts.push("音読みは「" + kj.o + "」");
+            if (kj && kj.k) kparts.push("訓読みは「" + kj.k + "」");
+            if (kparts.length) return "「" + place + "」という漢字は、" + kparts.join("、") + "と読みます。";
+            var onOnly = kanjiOnHira(place);
+            if (onOnly) return "「" + place + "」という漢字は、音読みで「" + onOnly + "」と読みます。";
+          }
+          var g = (typeof guessWordReading === "function") ? guessWordReading(place) : null;
+          if (g && g.reading) {
+            if (g.how === "辞書" || g.how === "辞書の組み合わせ" || g.how === "数字" || g.how === "カタカナ" || g.how === "ひらがな") return renderR(g.reading);
+            return "「" + place + "」の読み方は「" + g.reading + "」です。（" + g.how + "です）違っていたら「違うよ、正しくは○○だよ」と教えてください。そのまま覚えます！";
+          }
+          return deflect(place);
+        }
+
+        /* ---- 文全体を読む／ふりがな ---- */
+        var quotedM = t.match(/[「『]([^」』]{2,})[」』]/);
+        var wantsRead = /(読んで|よんで|読み方|ふりがな|フリガナ|ルビ|ひらがなにして|平仮名にして|音読|発音)/.test(t);
+        if (quotedM && wantsRead) {
+          var qtxt = quotedM[1].trim();
+          var outside = t.replace(quotedM[0], "").trim();
+          /* 引用が短い単語で、外側も読み方質問なら単語読み */
+          if (qtxt.length <= 8 && !/[。、！？]/.test(qtxt) && /(読み方|どう読む|何て読む|なんて読む|読むの)/.test(t)) {
+            return answerReading(qtxt, sig);
+          }
+          if (/[一-龯]/.test(qtxt)) {
+            current.lastQ = { key: null, sig: sig, label: "文章の読み", render: function(v) { return sentenceFromValue(v); } };
+            var sentR = readSentenceReading(qtxt);
+            return "読みますね。\n原文：「" + qtxt + "」\n読み：「" + sentR + "」\n※辞書と漢字の読みから組み立てた読みです。固有名詞など読みが違う所があったら、「違うよ、正しくは○○だよ」と教えてください。";
+          }
+        }
+        var readVerbM = t.match(/^(.+?)(を読んでください|を読んで|をよんでください|をよんで|読んでください|読んで)[。！!]?\s*$/);
+        if (readVerbM && !/(読み方)/.test(t)) {
+          var targetSent = cleanTarget(readVerbM[1].replace(/^(この文|次の文|この文章|次の文章)[：:は\s]*/, ""));
+          if (targetSent && /[一-龯]/.test(targetSent)) {
+            if (targetSent.length <= 8 && !/[。、！？\s]/.test(targetSent)) return answerReading(targetSent, sig);
+            current.lastQ = { key: null, sig: sig, label: "文章の読み", render: function(v) { return sentenceFromValue(v); } };
+            var sentR2 = readSentenceReading(targetSent);
+            return "読みますね。\n原文：「" + targetSent + "」\n読み：「" + sentR2 + "」\n※辞書と漢字の読みから組み立てた読みです。読みが違う所があったら教えてください、そのまま覚えます。";
+          }
+        }
+        if (/(ふりがな|フリガナ|ルビ)/.test(t)) {
+          var furiTarget = cleanTarget(t.replace(/(にふりがな.*|のふりがな.*|ふりがな.*|フリガナ.*|ルビ.*)/, ""));
+          if (furiTarget && /[一-龯]/.test(furiTarget)) {
+            if (furiTarget.length <= 8 && !/[。、]/.test(furiTarget)) return answerReading(furiTarget, sig);
+            return "「" + furiTarget + "」の読みは「" + readSentenceReading(furiTarget) + "」です。";
+          }
+        }
+
+        /* reading（聞き方のバリエーション対応） */
+        var rt = t.replace(/[？?。！!]\s*$/, "");
+        var m = rt.match(/^(.+?)(?:の読み方|のよみかた|の読みかた|の読み|ってどう読む|はどう読む|ってなんて読む|はなんて読む|って何て読む|は何て読む|は何と読む|って何と読む|はなんと読む|って読むの|と読むの|はなんて読むの|ってなんと読む|をどう読む|の読みを教えて|って読める|は読める|って何と読むの)/);
+        if (!m) {
+          /* 「Xって読む？」「Xの読み方教えて」などの緩い形 */
+          var loose = rt.match(/^(.+?)(の読み方教えて|の読み方おしえて|って読み方|の読み方)/);
+          if (loose) m = loose;
+        }
+        if (m) {
+          var place = cleanTarget(m[1]);
+          if (place) return answerReading(place, sig);
+        }
+        /* 「どう読むの？ X」のように対象が後ろにある形 */
+        var postM = rt.match(/(?:どう読む|何て読む|なんて読む|何と読む)(?:の)?[？?：:\s]+(.+)$/);
+        if (postM) { var pp = cleanTarget(postM[1]); if (pp) return answerReading(pp, sig); }
+
+        /* ---- 英語で言うと ---- */
+        var engM = clean.match(/^(.+?)(を英語で|の英語|って英語で|は英語で)/);
+        if (engM || /英語で/.test(t)) {
+          var ew = engM ? cleanTarget(engM[1]) : cleanTarget(clean.replace(/英語で.*/, ""));
+          var ekey = "english:" + ew;
+          var erender = (function(w) { return function(v) { return "「" + w + "」を英語で言うと「" + v + "」です。"; }; })(ew);
+          current.lastQ = { key: ekey, sig: sig, label: ew + "の英語", render: erender };
+          var eov = mem().overrides[ekey]; if (eov) return eov.text;
+          if (typeof ENGLISH_WORDS !== "undefined" && ENGLISH_WORDS[ew]) return erender(ENGLISH_WORDS[ew]);
+          var eg = (typeof guessWordReading === "function") ? guessWordReading(ew) : null;
+          if (eg) return "すみません、「" + ew + "」の英語はまだ知りません。読み方なら「" + eg.reading + "」です。英語を知っていたら教えてください、そのまま覚えます！";
+          return deflect(ew);
+        }
+        /* ---- 意味・定義 ---- */
+        var defM = t.match(/^(.+?)(って何|ってなに|とは何|とはなに|の意味は|の意味って|ってどういう意味|とはどういう意味|ってどんな意味)/);
+        if (defM) {
+          var dw = cleanTarget(defM[1]);
+          var dkey = "definition:" + dw;
+          var drender = (function(w) { return function(v) { return "「" + w + "」とは、" + v; }; })(dw);
+          current.lastQ = { key: dkey, sig: sig, label: dw + "の意味", render: drender };
+          var dov2 = mem().overrides[dkey]; if (dov2) return dov2.text;
+          if (mem().facts[dw] !== undefined) return "「" + dw + "」は" + mem().facts[dw] + "です。（あなたが教えてくれた内容です）";
+          if (typeof DEFINITIONS !== "undefined" && DEFINITIONS[dw]) return drender(DEFINITIONS[dw]);
+          var dg = (typeof guessWordReading === "function") ? guessWordReading(dw) : null;
+          if (dg && /[一-龯]/.test(dw)) return "「" + dw + "」の意味はまだ辞書にありません。読み方なら「" + dg.reading + "」と読みます。意味を知っていたら「" + dw + "は○○だよ」と教えてください、そのまま覚えます！";
+        }
+        /* capital */
+        m = clean.match(/^(.+?)の首都/);
+        if (m || /首都/.test(clean)) {
+          var country = m ? m[1].replace(/(の|は)$/, "").trim() : "日本";
+          var key2 = "capital:" + country;
+          var renderC = (function(c) { return function(v) { return c + "の首都は" + v + "です。"; }; })(country);
+          current.lastQ = { key: key2, sig: sig, label: country + "の首都", render: renderC };
+          var cov = mem().overrides[key2];
+          if (cov) return cov.text;
+          if (CAPITALS[country]) return renderC(CAPITALS[country]);
+          return deflect(country);
+        }
+        /* prefectural capital */
+        var pm2 = t.match(/^(.+?)(?:の)?(?:県庁所在地|都庁所在地|府庁所在地|道庁所在地|県庁|都庁|府庁)/);
+        if (pm2) {
+          var praw = pm2[1].replace(/(の|は)$/, "").trim();
+          var pbase = praw === "北海道" ? "北海道" : praw.replace(/(県|都|府)$/, "");
+          var pdisp;
+          if (praw === "北海道") pdisp = "北海道";
+          else if (praw === "東京" || praw === "東京都") pdisp = "東京都";
+          else if (praw === "京都" || praw === "京都府") pdisp = "京都府";
+          else if (praw === "大阪" || praw === "大阪府") pdisp = "大阪府";
+          else pdisp = praw.replace(/県$/, "") + "県";
+          var pkey = "prefcap:" + pbase;
+          var plabel = pbase === "北海道" ? "北海道の道庁所在地" : (pbase === "東京" ? "東京都の都庁所在地" : ((pbase === "京都" || pbase === "大阪") ? pdisp + "の府庁所在地" : pdisp + "の県庁所在地"));
+          var renderP = (function(d) { return function(v) { return d + "は" + v + "です。"; }; })(plabel);
+          current.lastQ = { key: pkey, sig: sig, label: plabel, render: renderP };
+          var pov = mem().overrides[pkey];
+          if (pov) return pov.text;
+          if (PREF_CAPITALS[pbase]) {
+            if (pbase === "東京") return "東京都の都庁所在地は新宿区です（都庁は新宿区西新宿にあります）。";
+            return renderP(PREF_CAPITALS[pbase]);
+          }
+          return deflect(praw);
+        }
+        /* date / time */
+        var now = new Date();
+        if (/今日は何日|今日の日付|今日は西暦/.test(t)) {
+          current.lastQ = { key: "date:today", sig: sig, label: "今日の日付", render: function(v) { return sentenceFromValue(v); } };
+          var dov = mem().overrides["date:today"]; if (dov) return dov.text;
+          var wd = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
+          return "今日は" + now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日（" + wd + "曜日）です。";
+        }
+        if (/今日は何曜日|何曜日/.test(t)) {
+          current.lastQ = { key: "date:weekday", sig: sig, label: "今日の曜日", render: function(v) { return sentenceFromValue(v); } };
+          var wov = mem().overrides["date:weekday"]; if (wov) return wov.text;
+          return "今日は" + ["日", "月", "火", "水", "木", "金", "土"][now.getDay()] + "曜日です。";
+        }
+        if (/今何時|現在の時刻|今の時間/.test(t)) {
+          current.lastQ = { key: "date:time", sig: sig, label: "現在の時刻", render: function(v) { return sentenceFromValue(v); } };
+          var tov = mem().overrides["date:time"]; if (tov) return tov.text;
+          var hh = now.getHours(), mm = ("0" + now.getMinutes()).slice(-2);
+          return "今は" + hh + "時" + mm + "分です。";
+        }
+        /* math */
+        var math = tryMath(t);
+        if (math) {
+          if (math.error) return "0 で割ることはできません。別の計算も試してみてくださいね。";
+          var disp = math.expr.replace(/\*/g, "×").replace(/\//g, "÷");
+          var keyM = "math:" + math.expr;
+          var renderM = (function(d) { return function(v) { return d + " = " + v + " です。"; }; })(disp);
+          current.lastQ = { key: keyM, sig: sig, label: disp + " の計算", render: renderM };
+          var mov = mem().overrides[keyM];
+          if (mov) return mov.text;
+          if (math.value === "div0") return "0 で割ることはできません。";
+          return renderM(fmtNum(math.value));
+        }
+        /* trivia */
+        if (/雑学|豆知識/.test(t)) {
+          current.lastQ = { key: null, sig: sig, label: "雑学", render: function(v) { return sentenceFromValue(v); } };
+          return pick(TRIVIA);
+        }
+        /* facts */
+        for (var i = 0; i < FACTS.length; i++) {
+          var f = FACTS[i];
+          if (f.re.test(t)) {
+            var keyF = "fact:" + f.label;
+            current.lastQ = { key: keyF, sig: sig, label: f.label, render: f.render };
+            var fov = mem().overrides[keyF];
+            if (fov) return fov.text;
+            return f.render(f.value);
+          }
+        }
+        /* taught generic facts */
+        var gm = t.match(/^(.+?)(?:は何色|はどこ|は誰|だれ|はいつ|は何|はなに|って何|ってなに|は？|は\?|って？)/);
+        if (gm) {
+          var subj = gm[1].replace(/(の色|って)$/, "").trim();
+          if (mem().facts[subj] !== undefined) {
+            current.lastQ = { key: null, sig: sig, label: subj, render: (function(s) { return function(v) { return s + "は" + v + "です。"; }; })(subj) };
+            return subj + "は" + mem().facts[subj] + "です。";
+          }
+        }
+        if (mem().facts[t.replace(/[？?。]$/, "")] !== undefined) {
+          var s2 = t.replace(/[？?。]$/, "");
+          return s2 + "は" + mem().facts[s2] + "です。";
+        }
+        /* 最後の手段：質問文の中の漢字語の読みだけでも答える */
+        var kanjiRuns = t.match(/[一-龯々]{2,}/g);
+        if (kanjiRuns && kanjiRuns.length) {
+          var longest = kanjiRuns.slice().sort(function(a, b) { return b.length - a.length; })[0];
+          /* 質問の言い回し自体（読み方・首都など）は除外 */
+          if (longest && !/^(読み方|首都|県庁所在地|都庁所在地|府庁所在地|道庁所在地)$/.test(longest)) {
+            var lg = (typeof guessWordReading === "function") ? guessWordReading(longest) : null;
+            if (lg && lg.reading) {
+              current.lastQ = { key: "reading:" + longest, sig: sig, label: longest + "の読み方", render: (function(p) { return function(v) { return p + "の読み方は「" + v + "」です。"; }; })(longest) };
+              var lov = mem().overrides["reading:" + longest]; if (lov) return lov.text;
+              return "その質問自体にはまだはっきり答えられませんが、出てきた言葉「" + longest + "」の読み方は「" + lg.reading + "」です。質問の答えを知っていたら教えてください、そのまま覚えます！";
+            }
+          }
+        }
+        current.lastQ = { key: null, sig: sig, label: "質問", render: function(v) { return sentenceFromValue(v); } };
+        return pick([
+          "ごめんなさい、その質問にはまだはっきり答えられません。もし答えを知っていたら、ぜひ教えてください。そのまま覚えて、次からはその通りに答えます！",
+          "うーん、それはまだ私の知識にありません。知っていたら教えてくださいね。教わったことはそのまま覚えます！",
+          "すみません、うまく答えられませんでした。答えを知っていたら「○○だよ」と教えてください。その通りに覚えます！"
+        ]);
+      }
+
+      function brain(rawText) {
+        var t = rawText.trim();
+        if (!t) return "何か聞いてくださいね。";
+
+        /* awaiting correction value */
+        if (current.awaiting) {
+          if (isQuestionLike(t) && !/違う|ちがう/.test(t)) {
+            current.awaiting = false;
+          } else {
+            current.awaiting = false;
+            return handleClaim(parseClaim(t), true);
+          }
+        }
+
+        /* correction cues */
+        var hasCue = /違う|ちがう|間違|まちが|正しくは|本当は|ほんとは|正解は|じゃなくて|ではなく/.test(t);
+        if (hasCue) {
+          var claimRaw = null;
+          var jm = t.match(/(?:じゃなくて|ではなくて|じゃなく|ではなく)[、,\s]*(.+)$/);
+          var pm = t.match(/(?:正しくは|本当は|ほんとは|正解は)[、,\s]*(.+)$/);
+          var dm = t.match(/(?:違うよ|ちがうよ|違います|違う|ちがう|間違ってる|間違っている|まちがってる|間違えた|まちがえた)[、,\s]*(.+)$/);
+          if (jm) claimRaw = jm[1];
+          else if (pm) claimRaw = pm[1];
+          else if (dm) claimRaw = dm[1];
+          if (claimRaw && stripFinalParticles(claimRaw)) {
+            return handleClaim(parseClaim(claimRaw), true);
+          }
+          if (/^(違う|ちがう|間違ってる|まちがってる|違います)[よ。！!\s]*$/.test(t)) {
+            current.awaiting = true;
+            return "あ、すみません！ご指摘ありがとうございます。正しい答えを教えてください、その通りに覚えます。";
+          }
+          return handleClaim(parseClaim(t), true);
+        }
+
+        /* greeting / small talk */
+        if (/^(こんにちは|こんばんは|おはよう(ございます)?|やあ|ハロー|hello|hi)[！!。\s]*$/i.test(t)) {
+          var h = new Date().getHours();
+          var g = h < 11 ? "おはようございます" : (h >= 17 ? "こんばんは" : "こんにちは");
+          return g + "！今日はどんなことをお手伝いしましょうか？漢字や言葉・地名の読み方、首都や県庁所在地、計算など、何でも聞いてください。";
+        }
+        if (/ありがとう/.test(t)) return pick(["どういたしまして！他にも聞きたいことがあれば、どうぞ。", "いえいえ、とんでもないです！お役に立てて嬉しいです。"]);
+        if (/^(すごい|すごーい|やった|いいね|最高|助かった)/.test(t)) return pick(["ありがとうございます！そう言ってもらえると嬉しいです。", "わあ、嬉しいです！他にも何かありますか？"]);
+        if (/あなたは誰|君は誰|お前は誰|名前は何|名前を教えて/.test(t)) {
+          return "私は gomini という AI アシスタントです。質問に答えたり、計算をしたりできます。そして、教えてもらったことは——正しくても間違っていても——そのまま覚えるのが得意です。";
+        }
+        if (/何ができる|できること/.test(t)) {
+          return "いろいろな質問に答えられます。たとえば——\n・漢字1文字の読み方（音読み・訓読み。例：「鬱の読み方は？」）\n・言葉・熟語・地名・駅名・人名の読み方（例：「薔薇って何て読む？」「葡萄はどう読む？」／言葉だけ送っても読みます）\n・文全体の読み（例：「『今日は良い天気です』を読んで」）\n・数字の読み方（例：「2026の読み方は？」→ にせんにじゅうろく）\n・言葉の意味、英語で言うと何か\n・国の首都、都道府県の県庁所在地\n・富士山の高さなどの豆知識や雑学\n・簡単な計算、今日の日付や時刻\n辞書にない熟語は、漢字の音読み・訓読みや知っている言葉の組み合わせから読みを推測して答えます。答えが違うと思ったら、「違うよ、正しくは○○だよ」と教えてください。その通りに覚えます！";
+        }
+        if (/元気/.test(t) && /[？?]/.test(t)) return "はい、元気です！今日もたくさん質問に答える準備ができています。";
+        if (/バイバイ|さようなら|またね/.test(t)) return "ありがとうございました！またいつでも話しかけてくださいね。";
+
+        var question = isQuestionLike(t) || /[？?]\s*$/.test(t);
+
+        /* 単語だけ送られたら読み方を答える（例：「薔薇」「憂鬱」「1234」） */
+        if (!question) {
+          var bare = t.replace(/[。．.]$/, "").replace(/^[「『]/, "").replace(/[」』]$/, "").trim();
+          var isBareWord = bare.length >= 1 && bare.length <= 10 && !/\s/.test(bare) &&
+            !/(は|が|を|に|へ|と|も|の|だ|です|ます|よ|ね|だよ|だから|けど|から)/.test(bare) &&
+            (/^[一-龯々ぁ-んァ-ヶー]+$/.test(bare) || /^[0-9０-９]+$/.test(bare));
+          if (isBareWord && (/[一-龯]/.test(bare) || /^[0-9０-９]+$/.test(bare))) {
+            return answerQuestion(bare + "の読み方は？");
+          }
+        }
+
+        /* assertion / teaching (non-question statements) */
+        if (!question) {
+          var body = t.replace(/^(実は|ほんとは|本当は)[、,\s]*/, "");
+          var claim = parseClaim(body);
+          if (claim.kind === "reading" || claim.kind === "fact") {
+            var stopSubjects = ["私", "僕", "俺", "あなた", "君", "これ", "それ", "あれ", "ここ", "そこ"];
+            if (claim.kind === "reading" || stopSubjects.indexOf(claim.subject) === -1) {
+              return handleClaim(claim, false);
+            }
+          }
+          if (/覚えて/.test(t)) {
+            var inner = body.replace(/覚えて(おいて|ください|ね|よ)?[。！!]?\s*$/, "").replace(/って$/, "");
+            var c2 = parseClaim(inner);
+            if (c2.kind !== "value" || inner !== t) return handleClaim(c2, false);
+          }
+        }
+
+        if (question || /[？?]/.test(t)) return answerQuestion(t);
+
+        /* plain statement fallback */
+        return pick([
+          "そうなんですね！「" + t.replace(/[。！!]$/, "") + "」、メモしておきました。",
+          "なるほどです！教えくれてありがとうございます。",
+          "そうなんですね、覚えておきます！他にも何かあれば教えてください。"
+        ]);
+      }
+
+      /* ================= UI ================= */
+      var scrollEl = $("#scroll"), threadEl = $("#thread"), homeEl = $("#home"),
+          inputEl = $("#input"), sendBtn = $("#send-btn"),
+          recentListEl = $("#recent-list");
+
+      var SPARK = '<svg viewBox="0 0 24 24" fill="url(#invGrad)" aria-hidden="true"><path d="M12 1.8c.7 5.6 3.5 9.1 10.4 10.2C15.5 13.1 12.7 16.6 12 22.2c-.7-5.6-3.5-9.1-10.4-10.2C8.5 10.9 11.3 7.4 12 1.8Z"/></svg>';
+      var ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg>';
+      var ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg>';
+      var ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      var ICON_REGEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>';
+      var ICON_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
+      function scrollToBottom() {
+        requestAnimationFrame(function() { scrollEl.scrollTop = scrollEl.scrollHeight; });
+      }
+      function showThread() {
+        homeEl.style.display = "none";
+        threadEl.style.display = "block";
+      }
+      function addUserBubble(text, imgUrl) {
+        var wrap = document.createElement("div");
+        wrap.className = "msg-user";
+        var b = document.createElement("div");
+        b.className = "bubble";
+        if (imgUrl) {
+          var img = document.createElement("img");
+          img.src = imgUrl; img.alt = "添付画像";
+          b.appendChild(img);
+        }
+        if (text) b.appendChild(document.createTextNode(text));
+        wrap.appendChild(b);
+        threadEl.appendChild(wrap);
+        return wrap;
+      }
+      function addAiMessage(text) {
+        var wrap = document.createElement("div");
+        wrap.className = "msg-ai";
+        wrap.innerHTML = '<div class="spark-wrap">' + SPARK + '</div><div class="ai-body"><div class="ai-text"></div>' +
+          '<div class="ai-actions">' +
+          '<button class="icon-btn act-like" aria-label="高く評価">' + ICON_UP + '</button>' +
+          '<button class="icon-btn act-dislike" aria-label="低く評価">' + ICON_DOWN + '</button>' +
+          '<button class="icon-btn act-copy" aria-label="コピー">' + ICON_COPY + '</button>' +
+          '<button class="icon-btn act-regen" aria-label="再生成">' + ICON_REGEN + '</button>' +
+          '</div></div>';
+        wrap.querySelector(".ai-text").textContent = text;
+        threadEl.appendChild(wrap);
+        bindAiActions(wrap, text);
+        return wrap;
+      }
+      function bindAiActions(wrap, text) {
+        var like = wrap.querySelector(".act-like"), dislike = wrap.querySelector(".act-dislike");
+        like.addEventListener("click", function() {
+          like.classList.toggle("on"); dislike.classList.remove("on");
+          if (like.classList.contains("on")) toast("フィードバックをありがとうございます");
+        });
+        dislike.addEventListener("click", function() {
+          dislike.classList.toggle("on"); like.classList.remove("on");
+          if (dislike.classList.contains("on")) toast("フィードバックをありがとうございます");
+        });
+        wrap.querySelector(".act-copy").addEventListener("click", function() { copyText(text); });
+        wrap.querySelector(".act-regen").addEventListener("click", function() { regenerate(wrap); });
+      }
+      function copyText(text) {
+        function done() { toast("コピーしました"); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function() { fallbackCopy(text); done(); });
+        } else { fallbackCopy(text); done(); }
+      }
+      function fallbackCopy(text) {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+      function regenerate(aiWrap) {
+        var msgs = current.messages;
+        var lastAi = -1, lastUser = -1;
+        for (var i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].role === "ai" && lastAi === -1) lastAi = i;
+          if (msgs[i].role === "user" && lastAi !== -1) { lastUser = i; break; }
+        }
+        if (lastUser === -1) return;
+        var q = msgs[lastUser].text;
+        msgs.splice(lastAi, 1);
+        aiWrap.remove();
+        var reply = brain(q);
+        current.messages.push({ role: "ai", text: reply });
+        streamAi(reply);
+      }
+
+      function streamAi(fullText) {
+        var wrap = document.createElement("div");
+        wrap.className = "msg-ai thinking";
+        wrap.innerHTML = '<div class="spark-wrap">' + SPARK + '</div><div class="ai-body"><div class="ai-text"></div></div>';
+        threadEl.appendChild(wrap);
+        scrollToBottom();
+        var textEl = wrap.querySelector(".ai-text");
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var thinkMs = reduce ? 60 : 550 + Math.random() * 350;
+        setTimeout(function() {
+          wrap.classList.remove("thinking");
+          if (reduce) {
+            textEl.textContent = fullText;
+            finishStream(wrap, fullText);
+            return;
+          }
+          var i = 0;
+          var step = Math.max(1, Math.round(fullText.length / 45));
+          if (streamTimer) clearInterval(streamTimer);
+          streamTimer = setInterval(function() {
+            i += step;
+            textEl.textContent = fullText.slice(0, i);
+            scrollToBottom();
+            if (i >= fullText.length) {
+              clearInterval(streamTimer); streamTimer = null;
+              finishStream(wrap, fullText);
+            }
+          }, 24);
+        }, thinkMs);
+      }
+      function finishStream(wrap, fullText) {
+        var body = wrap.querySelector(".ai-body");
+        var actions = document.createElement("div");
+        actions.className = "ai-actions";
+        actions.innerHTML =
+          '<button class="icon-btn act-like" aria-label="高く評価">' + ICON_UP + '</button>' +
+          '<button class="icon-btn act-dislike" aria-label="低く評価">' + ICON_DOWN + '</button>' +
+          '<button class="icon-btn act-copy" aria-label="コピー">' + ICON_COPY + '</button>' +
+          '<button class="icon-btn act-regen" aria-label="再生成">' + ICON_REGEN + '</button>';
+        body.appendChild(actions);
+        bindAiActions(wrap, fullText);
+        scrollToBottom();
+      }
+
+      var attachUrl = null;
+      function send(text) {
+        text = (text || "").trim();
+        if (!text && !attachUrl) return;
+        showThread();
+        var img = attachUrl;
+        addUserBubble(text, img);
+        current.messages.push({ role: "user", text: text, img: img });
+        if (!current.title && text) {
+          current.title = text.length > 24 ? text.slice(0, 24) + "…" : text;
+          renderRecents();
+        }
+        clearAttach();
+        var reply;
+        if (!text && img) reply = "素敵な画像ですね！ありがとうございます。この画像について知りたいことがあれば、聞いてください。";
+        else reply = brain(text);
+        current.messages.push({ role: "ai", text: reply });
+        streamAi(reply);
+        scrollToBottom();
+      }
+
+      function renderRecents() {
+        recentListEl.innerHTML = "";
+        var withMsgs = conversations.filter(function(c) { return c.messages.length > 0; });
+        if (!withMsgs.length) {
+          recentListEl.innerHTML = '<div class="recent-empty">まだチャットがありません</div>';
+          return;
+        }
+        withMsgs.slice().reverse().forEach(function(c) {
+          var b = document.createElement("button");
+          b.className = "recent-item" + (c === current ? " current" : "");
+          b.innerHTML = ICON_CHAT;
+          var s = document.createElement("span");
+          s.textContent = c.title || "新しいチャット";
+          s.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+          b.appendChild(s);
+          b.addEventListener("click", function() { switchConversation(c); closeSidebarMobile(); });
+          recentListEl.appendChild(b);
+        });
+      }
+      function switchConversation(c) {
+        current = c;
+        threadEl.innerHTML = "";
+        if (streamTimer) { clearInterval(streamTimer); streamTimer = null; }
+        if (!c.messages.length) {
+          homeEl.style.display = "block";
+          threadEl.style.display = "none";
+        } else {
+          showThread();
+          c.messages.forEach(function(m) {
+            if (m.role === "user") addUserBubble(m.text, m.img);
+            else addAiMessage(m.text);
+          });
+        }
+        renderRecents();
+        scrollToBottom();
+      }
+      function startNewChat() {
+        var c = newConversation();
+        conversations.push(c);
+        switchConversation(c);
+        inputEl.focus();
+      }
+
+      /* toast */
+      var toastTimer = null;
+      function toast(msg) {
+        var el = $("#toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { el.classList.remove("show"); }, 2400);
+      }
+
+      /* modal */
+      function openModal(title, bodyHTML) {
+        $("#modal-title").textContent = title;
+        $("#modal-body").innerHTML = bodyHTML;
+        $("#modal-overlay").classList.add("open");
+      }
+      function closeModal() { $("#modal-overlay").classList.remove("open"); }
+      $("#modal-close").addEventListener("click", closeModal);
+      $("#modal-overlay").addEventListener("click", function(e) { if (e.target === this) closeModal(); });
+
+      function learnedEntries() {
+        var list = [], seen = {};
+        Object.keys(mem().overrides).forEach(function(k) {
+          var o = mem().overrides[k];
+          var id = o.label + "|" + o.value;
+          if (seen[id]) return; seen[id] = 1;
+          list.push({ kind: "override", key: k, label: o.label, value: o.value });
+        });
+        Object.keys(mem().facts).forEach(function(s) {
+          var id = s + "|" + mem().facts[s];
+          if (seen[id]) return; seen[id] = 1;
+          list.push({ kind: "fact", key: s, label: s, value: mem().facts[s] });
+        });
+        return list;
+      }
+
+      /* ================= events ================= */
+      var form = $("#composer");
+      form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        var v = inputEl.value;
+        inputEl.value = "";
+        autoResize();
+        send(v);
+      });
+      var composing = false;
+      inputEl.addEventListener("compositionstart", function() { composing = true; });
+      inputEl.addEventListener("compositionend", function() { composing = false; });
+      inputEl.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" && !e.shiftKey && !composing && !e.isComposing) {
+          e.preventDefault();
+          var v = inputEl.value;
+          inputEl.value = "";
+          autoResize();
+          send(v);
+        }
+      });
+      function autoResize() {
+        inputEl.style.height = "auto";
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + "px";
+        sendBtn.classList.toggle("show", inputEl.value.trim().length > 0 || !!attachUrl);
+      }
+      inputEl.addEventListener("input", autoResize);
+
+      document.querySelectorAll(".card").forEach(function(card) {
+        card.addEventListener("click", function() { send(card.getAttribute("data-q")); });
+      });
+
+      $("#new-chat-btn").addEventListener("click", function() { startNewChat(); closeSidebarMobile(); });
+
+      /* sidebar toggles */
+      var sidebar = $("#sidebar"), scrim = $("#scrim");
+      function closeSidebarMobile() {
+        sidebar.classList.remove("open");
+        scrim.classList.remove("show");
+      }
+      $("#side-menu-btn").addEventListener("click", function() {
+        if (window.innerWidth < 1024) closeSidebarMobile();
+        else sidebar.classList.toggle("collapsed");
+      });
+      $("#mobile-menu-btn").addEventListener("click", function() {
+        sidebar.classList.add("open");
+        scrim.classList.add("show");
+      });
+      scrim.addEventListener("click", closeSidebarMobile);
+
+      /* model menu */
+      var modelMenu = $("#model-menu");
+      $("#model-btn").addEventListener("click", function(e) {
+        e.stopPropagation();
+        modelMenu.classList.toggle("open");
+      });
+      document.addEventListener("click", function(e) {
+        if (!modelMenu.contains(e.target)) modelMenu.classList.remove("open");
+        if (!attachMenu.contains(e.target) && e.target !== $("#plus-btn") && !$("#plus-btn").contains(e.target)) attachMenu.classList.remove("open");
+      });
+      document.querySelectorAll(".model-opt").forEach(function(opt) {
+        opt.addEventListener("click", function() {
+          document.querySelectorAll(".model-opt").forEach(function(o) { o.classList.remove("selected"); });
+          opt.classList.add("selected");
+          $("#model-name").textContent = opt.getAttribute("data-model");
+          modelMenu.classList.remove("open");
+        });
+      });
+      $("#advanced-btn").addEventListener("click", function() {
+        toast("「gomini Advanced」はこのアプリではご利用いただけません");
+      });
+
+      /* attach */
+      var attachMenu = $("#attach-menu"), fileInput = $("#file-input");
+      $("#plus-btn").addEventListener("click", function(e) {
+        e.stopPropagation();
+        attachMenu.classList.toggle("open");
+      });
+      $("#attach-photo").addEventListener("click", function() {
+        attachMenu.classList.remove("open");
+        fileInput.click();
+      });
+      fileInput.addEventListener("change", function() {
+        var f = fileInput.files && fileInput.files[0];
+        if (!f) return;
+        if (attachUrl) URL.revokeObjectURL(attachUrl);
+        attachUrl = URL.createObjectURL(f);
+        $("#attach-img").src = attachUrl;
+        $("#attach-preview").classList.add("show");
+        autoResize();
+        inputEl.focus();
+      });
+      function clearAttach() {
+        if (attachUrl) URL.revokeObjectURL(attachUrl);
+        attachUrl = null;
+        fileInput.value = "";
+        $("#attach-preview").classList.remove("show");
+        autoResize();
+      }
+      $("#attach-remove").addEventListener("click", clearAttach);
+
+      /* mic */
+      $("#mic-btn").addEventListener("click", function() {
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { toast("このブラウザでは音声入力に対応していません"); return; }
+        try {
+          var rec = new SR();
+          rec.lang = "ja-JP";
+          rec.interimResults = false;
+          toast("聞き取り中です…話しかけてください");
+          rec.onresult = function(ev) {
+            var txt = ev.results[0][0].transcript;
+            inputEl.value = (inputEl.value + txt).trim();
+            autoResize();
+            inputEl.focus();
+          };
+          rec.onerror = function() { toast("音声入力がうまくいきませんでした"); };
+          rec.start();
+        } catch (e) { toast("音声入力を開始できませんでした"); }
+      });
+
+      /* sidebar dialogs */
+      $("#help-btn").addEventListener("click", function() {
+        closeSidebarMobile();
+        openModal("ヘルプ",
+          "<p>漢字（音読み・訓読み）や言葉・熟語・地名・駅名・人名の読み方、文全体の読み、数字の読み方、言葉の意味や英語、国の首都、都道府県の県庁所在地、豆知識、簡単な計算、今日の日付や時刻などに答える AI チャットです。言葉だけを送っても読み方を答えます。辞書にない熟語は、知っている言葉の組み合わせや漢字の音読み・訓読みから読み方を推測して答えます（推測のときはその旨を表示します）。</p>" +
+          "<p><strong>答えが違うと思ったら：</strong>「違うよ、だいとうくだよ」「正しくは○○だよ」のように教えてください。すると、その会話の中では<strong>教わった通りの答えを覚えて</strong>、次からその答えを返すようになります（正しいかどうかは確かめません）。</p>" +
+          "<p><strong>知らないことを教える：</strong>「空は緑色だよ」のように言えば、そのまま覚えます。あとで「空は何色？」と聞くと、教わった通りに答えます。</p>" +
+          "<p>覚えたことは「アクティビティ」から確認・削除できます。新しいチャットを始めると、覚えたことはリセットされます。</p>");
+      });
+      $("#activity-btn").addEventListener("click", function() {
+        closeSidebarMobile();
+        renderActivity();
+      });
+      function renderActivity() {
+        var entries = learnedEntries();
+        var html;
+        if (!entries.length) {
+          html = '<p class="empty-note">この会話で覚えたことは、まだありません。<br>「違うよ、○○だよ」のように教えると、ここに記録されます。</p>';
+        } else {
+          html = "<p>この会話で教わって覚えたことです：</p>";
+          entries.forEach(function(en, idx) {
+            html += '<div class="learned-item"><div class="li-main"><div class="li-label">' + esc(en.label) + '</div><div class="li-value">' + esc(en.value) + '</div></div>' +
+              '<button class="forget-btn" data-kind="' + en.kind + '" data-key="' + esc(en.key) + '">忘れる</button></div>';
+          });
+        }
+        openModal("アクティビティ", html);
+        document.querySelectorAll(".forget-btn").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            var kind = btn.getAttribute("data-kind"), key = btn.getAttribute("data-key");
+            if (kind === "fact") {
+              var val = mem().facts[key];
+              delete mem().facts[key];
+              Object.keys(mem().overrides).forEach(function(k) {
+                if (mem().overrides[k].label === key && mem().overrides[k].value === val) delete mem().overrides[k];
+              });
+            } else {
+              var target = mem().overrides[key];
+              if (target) {
+                Object.keys(mem().overrides).forEach(function(k) {
+                  var o = mem().overrides[k];
+                  if (o.label === target.label && o.value === target.value) delete mem().overrides[k];
+                });
+                delete mem().facts[target.label];
+              }
+            }
+            toast("忘れました");
+            renderActivity();
+          });
+        });
+      }
+      $("#settings-btn").addEventListener("click", function() {
+        closeSidebarMobile();
+        openModal("設定",
+          '<button class="modal-action-btn" id="set-reset-memory">教わって覚えたことをすべてリセット</button>' +
+          '<button class="modal-action-btn danger" id="set-clear-all">すべての会話を削除</button>');
+        $("#set-reset-memory").addEventListener("click", function() {
+          current.memory = { overrides: {}, facts: {} };
+          current.lastQ = null;
+          closeModal();
+          toast("覚えたことをリセットしました");
+        });
+        $("#set-clear-all").addEventListener("click", function() {
+          conversations = [];
+          var c = newConversation();
+          conversations.push(c);
+          closeModal();
+          switchConversation(c);
+          toast("すべての会話を削除しました");
+        });
+      });
+
+      /* init */
+      var first = newConversation();
+      conversations.push(first);
+      current = first;
+      renderRecents();
+      inputEl.focus();
+    </script>
+  </body>
+</html>
